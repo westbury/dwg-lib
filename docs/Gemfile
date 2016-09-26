@@ -1,0 +1,8 @@
+source "https://rubygems.org"
+ruby RUBY_VERSION
+
+# This is the default theme for new Jekyll sites.
+gem "minima"
+
+# This is needed if using GitHub Pages.
+gem "github-pages", group: :jekyll_plugins

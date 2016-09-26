@@ -1,0 +1,14 @@
+title: A reader and writer for DWG files, coded in Java
+email: nigel.westbury@1spatial.com
+description: > # this means to ignore newlines until "baseurl:"
+  This site provides progress documentation for the dwg-lib project on Github.
+  The project is an attempt to see if it is possible to read and write DWG files.
+  The format of these files has been publicly documented by the Open Design Alliance.
+  However the format is not trivial and providing an implementation is expected to
+  be a challenging task even with the file format specification.
+baseurl: ""
+github_username:  westbury
+
+# Build settings
+markdown: kramdown
+theme: minima
