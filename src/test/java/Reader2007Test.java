@@ -10,12 +10,12 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-public class ReaderTest {
+public class Reader2007Test {
 
 	/**
-	 * a sample file, available from Autodesk, in 2010 format
+	 * a sample file, available from Autodesk, in 2007 format
 	 */
-	static File testFile = new File("visualization_-_aerial.dwg");
+	static File testFile = new File("air_suspension.dwg");
 	
 
 	/**
@@ -25,7 +25,7 @@ public class ReaderTest {
 	public static void setUpBeforeClass() throws Exception {
 		if (!testFile.exists()) {
 			
-			URL urlToTestFile = new URL("http://download.autodesk.com/us/samplefiles/acad/visualization_-_aerial.dwg");
+			URL urlToTestFile = new URL("http://download.autodesk.com/us/support/files/autocadlt_2010_sample_files/air_suspension.dwg");
 			try (
 					ReadableByteChannel inputChannel = Channels.newChannel(urlToTestFile.openStream());
 					FileOutputStream outputStream = new FileOutputStream(testFile);
@@ -35,9 +35,8 @@ public class ReaderTest {
 		}
 	}
 
-	@Test
+	@Test(expected=UnsupportedFileVersionException.class)
 	public void version() throws IOException {
-		Reader reader = new Reader(testFile);
-		assertEquals("AC1024", reader.getVersion());
+	     new Reader(testFile);
 	}
 }
