@@ -1,11 +1,40 @@
+/*
+ * Copyright (c) 2016, 1Spatial Group Ltd.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ */
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
+import java.util.List;
 
 
+/**
+ * Reads a DWG format file.
+ *  
+ * @author Nigel Westbury
+ */
 public class Reader {
 
 	private Issues issues = new Issues();
@@ -27,6 +56,8 @@ public class Reader {
 	private boolean addTimestamp;
 	private int summaryInfoAddress;
 	private int vbaProjectAddress;
+
+	List<Section> sections = new ArrayList<>();
 
 	public Reader(File inputFile) throws IOException {
 		try(FileInputStream inputStream = new FileInputStream(inputFile)) {
@@ -69,19 +100,22 @@ public class Reader {
 
 			// 4.1 R2004 File Header
 
-			byte [] randomData = new byte [] { 0x29, 0x23, (byte)0xBE, (byte)0x84, (byte)0xE1, 0x6C, (byte)0xD6, (byte)0xAE, 0x52, (byte)0x90, 0x49, (byte)0xF1, (byte)0xF1, (byte)0xBB, (byte)0xE9, (byte)0xEB,
-					(byte)0xB3, (byte)0xA6, (byte)0xDB, 0x3C, (byte)0x87, 0x0C, 0x3E, (byte)0x99, 0x24, 0x5E, 0x0D, 0x1C, 0x06, (byte)0xB7, 0x47, (byte)0xDE,
-					(byte)0xB3, 0x12, 0x4D, (byte)0xC8, 0x43, (byte)0xBB, (byte)0x8B, (byte)0xA6, 0x1F, 0x03, 0x5A, 0x7D, 0x09, 0x38, 0x25, 0x1F,
-					0x5D, (byte)0xD4, (byte)0xCB, (byte)0xFC, (byte)0x96, (byte)0xF5, 0x45, 0x3B, 0x13, 0x0D, (byte)0x89, 0x0A, 0x1C, (byte)0xDB, (byte)0xAE, 0x32,
-					0x20, (byte)0x9A, 0x50, (byte)0xEE, 0x40, 0x78, 0x36, (byte)0xFD, 0x12, 0x49, 0x32, (byte)0xF6, (byte)0x9E, 0x7D, 0x49, (byte)0xDC,
-					(byte)0xAD, 0x4F, 0x14, (byte)0xF2, 0x44, 0x40, 0x66, (byte)0xD0, 0x6B, (byte)0xC4, 0x30, (byte)0xB7 };
-
+			byte [] p = new byte [108];
+			int q = 0;
+			long sz = 0x6c;
+			int randseed = 1;
+			while (sz-- != 0)
+			{
+				randseed *= 0x343fd;
+				randseed += 0x269ec3;
+				p[q++] = (byte)((randseed >> 0x10) & 0xFF);
+			}
 
 			buffer.position(128);
 			byte [] decryptedData = new byte[108];
 			buffer.get(decryptedData);
-			for (int i = 0; i < 92; i++) {
-				decryptedData[i] ^= randomData[i];
+			for (int i = 0; i < 108; i++) {
+				decryptedData[i] ^= p[i];
 			}
 
 			ByteBuffer decryptedBuffer = ByteBuffer.wrap(decryptedData);
@@ -119,9 +153,70 @@ public class Reader {
 			byte [] theRest = new byte[0x14];
 			buffer.get(theRest);
 
-			System.out.println(theRest);
+			readSystemSectionPage(buffer, sectionPageMapAddress);
 			
 		}
+	}
+
+	/**
+	 * Section 4.3 System section page
+	 */
+	private void readSystemSectionPage(ByteBuffer buffer, long sectionPageMapAddress) {
+		if (0x100 + sectionPageMapAddress > Integer.MAX_VALUE) {
+			throw new RuntimeException("sectionPageMapAddress is too big for us.");
+		}
+		buffer.position(0x100 + (int)sectionPageMapAddress);
+
+		int pageType = buffer.getInt();
+		int decompressedSize = buffer.getInt();
+		int compressedSize = buffer.getInt();
+		int compressionType = buffer.getInt();
+		int sectionPageChecksum = buffer.getInt();
+
+		byte [] compressedData = new byte[compressedSize];
+		buffer.get(compressedData);
+		
+		int pageType2 = buffer.getInt();
+		int decompressedSize2 = buffer.getInt();
+		int compressedSize2 = buffer.getInt();
+		int compressionType2 = buffer.getInt();
+		int sectionPageChecksum2 = buffer.getInt();
+		
+		switch (pageType) {
+		case 0x41630E3B:
+			break;
+			default:
+				throw new RuntimeException();
+		}
+		
+		byte [] expandedData = new Expander(compressedData, decompressedSize).result;
+		
+		// 4.4 2004 Section page map
+
+		ByteBuffer expandedBuffer = ByteBuffer.wrap(expandedData);
+		
+		expandedBuffer.order(ByteOrder.LITTLE_ENDIAN);
+		int address = 0x100;
+		do {
+			int sectionPageNumber = expandedBuffer.getInt();
+			int sectionSize = expandedBuffer.getInt();
+			
+			if (sectionPageNumber > 0) {
+				sections .add(new Section(sectionPageNumber, address, sectionSize));
+			} else {
+				int parent = expandedBuffer.getInt();
+				int left = expandedBuffer.getInt();
+				int right = expandedBuffer.getInt();
+				int hex00 = expandedBuffer.getInt();
+				
+				// Really only useful if writing files is supported
+				// but add to our data structure so we are ready.
+				sections.add(new SectionGap(sectionPageNumber, address, sectionSize, parent, left, right));
+			}
+			
+			address += sectionSize;
+		} while (expandedBuffer.position() != expandedData.length);
+
 	}
 
 	private void expectInt(ByteBuffer buffer, int expected) {
@@ -157,4 +252,36 @@ public class Reader {
 	public String getVersion() {
 		return fileVersionAsString;
 	}
+
+	public class Section {
+		final int sectionPageNumber;
+		
+		final int address;
+		
+		final int sectionSize;
+		
+		public Section(int sectionPageNumber, int address, int sectionSize) {
+			this.sectionPageNumber = sectionPageNumber;
+			this.address = address;
+			this.sectionSize = sectionSize;
+		}
+
+	}
+
+	public class SectionGap extends Section {
+		final int parent;
+		
+		final int left;
+		
+		final int right;
+		
+		public SectionGap(int sectionPageNumber, int address, int sectionSize, int parent, int left, int right) {
+			super(sectionPageNumber, address, sectionSize);
+			this.parent = parent;
+			this.left = left;
+			this.right = right;
+		}
+
+	}
+	
 }

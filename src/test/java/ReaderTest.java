@@ -39,5 +39,10 @@ public class ReaderTest {
 	public void version() throws IOException {
 		Reader reader = new Reader(testFile);
 		assertEquals("AC1024", reader.getVersion());
+		
+		assertEquals(1, reader.sections.get(0).sectionPageNumber);
+		assertEquals(160, reader.sections.get(0).sectionSize);
+		assertEquals(42, reader.sections.get(46).sectionPageNumber);
+		assertEquals(3840, reader.sections.get(46).sectionSize);
 	}
 }
