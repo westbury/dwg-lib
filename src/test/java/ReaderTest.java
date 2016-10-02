@@ -40,9 +40,17 @@ public class ReaderTest {
 		Reader reader = new Reader(testFile);
 		assertEquals("AC1024", reader.getVersion());
 		
+		assertEquals(47, reader.sections.size());
 		assertEquals(1, reader.sections.get(0).sectionPageNumber);
 		assertEquals(160, reader.sections.get(0).sectionSize);
 		assertEquals(42, reader.sections.get(46).sectionPageNumber);
 		assertEquals(3840, reader.sections.get(46).sectionSize);
+		
+		assertEquals(22, reader.classes.size());
+		assertEquals(1, reader.classes.get(0).numberOfObjects);
+		assertEquals("ObjectDBX Classes", reader.classes.get(0).appname);
+		assertEquals(1, reader.classes.get(21).numberOfObjects);
+		assertEquals("SCENEOE", reader.classes.get(21).appname);
+		
 	}
 }

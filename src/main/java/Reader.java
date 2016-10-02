@@ -23,10 +23,12 @@
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -58,6 +60,8 @@ public class Reader {
 	private int vbaProjectAddress;
 
 	List<Section> sections = new ArrayList<>();
+
+	List<ClassData> classes = new ArrayList<>();
 
 	public Reader(File inputFile) throws IOException {
 		try(FileInputStream inputStream = new FileInputStream(inputFile)) {
@@ -153,7 +157,7 @@ public class Reader {
 			byte [] theRest = new byte[0x14];
 			buffer.get(theRest);
 
-			readSystemSectionPage(buffer, sectionPageMapAddress);
+			readSystemSectionPage(buffer, sectionPageMapAddress, sectionMapId);
 			
 		}
 	}
@@ -161,39 +165,17 @@ public class Reader {
 	/**
 	 * Section 4.3 System section page
 	 */
-	private void readSystemSectionPage(ByteBuffer buffer, long sectionPageMapAddress) {
+	private void readSystemSectionPage(ByteBuffer buffer, long sectionPageMapAddress, int sectionMapId) {
 		if (0x100 + sectionPageMapAddress > Integer.MAX_VALUE) {
 			throw new RuntimeException("sectionPageMapAddress is too big for us.");
 		}
 		buffer.position(0x100 + (int)sectionPageMapAddress);
 
-		int pageType = buffer.getInt();
-		int decompressedSize = buffer.getInt();
-		int compressedSize = buffer.getInt();
-		int compressionType = buffer.getInt();
-		int sectionPageChecksum = buffer.getInt();
-
-		byte [] compressedData = new byte[compressedSize];
-		buffer.get(compressedData);
-		
-		int pageType2 = buffer.getInt();
-		int decompressedSize2 = buffer.getInt();
-		int compressedSize2 = buffer.getInt();
-		int compressionType2 = buffer.getInt();
-		int sectionPageChecksum2 = buffer.getInt();
-		
-		switch (pageType) {
-		case 0x41630E3B:
-			break;
-			default:
-				throw new RuntimeException();
-		}
-		
-		byte [] expandedData = new Expander(compressedData, decompressedSize).result;
+        SectionPage sectionPage = readSystemSectionPage(buffer, 0x41630E3B);
 		
 		// 4.4 2004 Section page map
 
-		ByteBuffer expandedBuffer = ByteBuffer.wrap(expandedData);
+		ByteBuffer expandedBuffer = ByteBuffer.wrap(sectionPage.expandedData);
 		
 		expandedBuffer.order(ByteOrder.LITTLE_ENDIAN);
 		int address = 0x100;
@@ -215,9 +197,328 @@ public class Reader {
 			}
 			
 			address += sectionSize;
-		} while (expandedBuffer.position() != expandedData.length);
+		} while (expandedBuffer.position() != sectionPage.expandedData.length);
+
+		
+
+
+        // Is this 4.5????
+
+        Section sectionMap = null;
+        for (Section eachSection : sections) {
+            if (eachSection.sectionPageNumber == sectionMapId) {
+                sectionMap = eachSection;
+                break;
+            }
+        }
+
+        buffer.position(sectionMap.address);
+
+
+        // 4.3 (page 25) System section page:
+
+        SectionPage sectionPage2 = readSystemSectionPage(buffer, 0x4163003B);
+
+        // The expanded data is described in 4.5 2004 Data section map.
+
+        ByteBuffer sectionPageBuffer = ByteBuffer.wrap(sectionPage2.expandedData);
+        sectionPageBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+        int numDescriptions = sectionPageBuffer.getInt();
+        int hex02 = sectionPageBuffer.getInt();
+        int hex7400 = sectionPageBuffer.getInt();
+        int hex00 = sectionPageBuffer.getInt();
+        int unknown2 = sectionPageBuffer.getInt();
+
+        for (int i = 0; i < numDescriptions; i++) {
+            long sizeOfSection = sectionPageBuffer.getLong();
+            int pageCount = sectionPageBuffer.getInt();
+            int maxDecompressedSize = sectionPageBuffer.getInt();
+            int unknown3 = sectionPageBuffer.getInt();
+            int compressed = sectionPageBuffer.getInt();
+            int sectionId = sectionPageBuffer.getInt();
+            int encrypted = sectionPageBuffer.getInt();
+
+            boolean isCompressed;
+            switch (compressed) {
+            case 1:
+                isCompressed = false;
+                break;
+            case 2:
+                isCompressed = true;
+                break;
+            default:
+                throw new RuntimeException("bad enum");
+            }
+
+            Boolean isEncrypted;
+            switch (compressed) {
+            case 0:
+                isEncrypted = false;
+                break;
+            case 1:
+                isEncrypted = true;
+                break;
+            case 2:
+                isEncrypted = null; // Indicates unknown
+                break;
+            default:
+                throw new RuntimeException("bad enum");
+            }
+
+
+            byte [] sectionNameAsBytes = new byte[64];
+            sectionPageBuffer.get(sectionNameAsBytes);
+
+            int index = 0;
+            while (index != 64 && sectionNameAsBytes[index] != 0) {
+                index++;
+            }
+
+            String sectionName;
+            try {
+                sectionName = new String(sectionNameAsBytes, 0, index, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (sectionName.equals("AcDb:Header")) {
+                // Page 68
+
+                int pageNumber = sectionPageBuffer.getInt();
+                int dataSize = sectionPageBuffer.getInt();
+                long startOffset = sectionPageBuffer.getLong();
+
+                Section classesData = null;
+                for (Section eachSection : sections) {
+                    if (eachSection.sectionPageNumber == pageNumber) {
+                        classesData = eachSection;
+                        break;
+                    }
+                }
+
+                buffer.position(classesData.address);
+
+                int secMask = 0x4164536b ^ classesData.address;
+
+                int typeA = buffer.getInt();
+                int typeB = typeA ^ secMask;
+                int sectionPageType = typeA ^ classesData.address;
+                int sectionNumber = buffer.getInt() ^ secMask;
+                int dataSize2 = buffer.getInt() ^ secMask;  // dataSize
+                int pageSize = buffer.getInt() ^ secMask;  // classData.sectionSize
+                int startOffset2 = buffer.getInt() ^ secMask;
+                int pageHeaderChecksum = buffer.getInt() ^ secMask;
+                int dataChecksum = buffer.getInt() ^ secMask;
+                int unknown5 = buffer.getInt() ^ secMask;
+
+
+                byte [] compressedData = new byte[dataSize2];
+                buffer.get(compressedData);
+
+                // Was pageSize for last param below.
+                byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+
+                ByteBuffer headerBuffer = ByteBuffer.wrap(expandedData);
+                headerBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+                // 8 Data section AcDb:Header (HEADER VARIABLES), page 68
+
+                // The signature
+                byte [] signature = new byte[16];
+                headerBuffer.get(signature);
+                if (!Arrays.equals(signature, new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F })) {
+                    throw new RuntimeException("bad signature: ");
+                }
+
+                BitBuffer bitClasses = BitBuffer.wrap(expandedData);
+
+                bitClasses.position(16*8);
+
+                int sizeOfTheSection = bitClasses.getRL();
+                
+                // 2013 and onwards: need this according to doc,
+                // but no test for this yet.
+                    //                    bitClasses.getBLL();
+                
+
+                // TODO finish this long list....
+
+            } else if (sectionName.equals("AcDb:Objects")) {
+                int pageNumber = sectionPageBuffer.getInt();
+                int dataSize = sectionPageBuffer.getInt();
+                long startOffset = sectionPageBuffer.getLong();
+
+                Section classesData = null;
+                for (Section eachSection : sections) {
+                    if (eachSection.sectionPageNumber == pageNumber) {
+                        classesData = eachSection;
+                        break;
+                    }
+                }
+
+                buffer.position(classesData.address);
+
+
+            } else if (sectionName.equals("AcDb:Classes")) {
+                int pageNumber = sectionPageBuffer.getInt();
+                int dataSize = sectionPageBuffer.getInt();
+                long startOffset = sectionPageBuffer.getLong();
+
+                Section classesData = null;
+                for (Section eachSection : sections) {
+                    if (eachSection.sectionPageNumber == pageNumber) {
+                        classesData = eachSection;
+                        break;
+                    }
+                }
+
+                buffer.position(classesData.address);
+
+                int secMask = 0x4164536b ^ classesData.address;
+
+                int typeA = buffer.getInt();
+                int typeB = typeA ^ secMask;
+                int sectionPageType = typeA ^ classesData.address;
+                int sectionNumber = buffer.getInt() ^ secMask;
+                int dataSize2 = buffer.getInt() ^ secMask;  // dataSize
+                int pageSize = buffer.getInt() ^ secMask;  // classData.sectionSize
+                int startOffset2 = buffer.getInt() ^ secMask;
+                int pageHeaderChecksum = buffer.getInt() ^ secMask;
+                int dataChecksum = buffer.getInt() ^ secMask;
+                int unknown = buffer.getInt() ^ secMask;
+
+                byte [] compressedData = new byte[dataSize2];
+                buffer.get(compressedData);
+
+                // Was pageSize for last param below.
+                byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+
+                ByteBuffer classesBuffer = ByteBuffer.wrap(expandedData);
+                classesBuffer.order(ByteOrder.LITTLE_ENDIAN);
+
+                // 5.8 AcDb:Classes Section
+
+                // The signature
+                byte [] sig6 = new byte[16];
+                classesBuffer.get(sig6);
+                if (!Arrays.equals(sig6, new byte [] { (byte)0x8D, (byte)0xA1, (byte)0xC4, (byte)0xB8, (byte)0xC4, (byte)0xA9, (byte)0xF8, (byte)0xC5, (byte)0xC0, (byte)0xDC, (byte)0xF4, (byte)0x5F, (byte)0xE7, (byte)0xCF, (byte)0xB6, (byte)0x8A})) {
+                    throw new RuntimeException("bad signature: ");
+                }
+
+                BitBuffer bitClasses = BitBuffer.wrap(expandedData);
+
+                bitClasses.position(16*8);
+
+                int sizeOfClassDataArea = bitClasses.getRL();
+
+
+
+                int unknown75 = bitClasses.getRL();
+                int totalSizeInBits = bitClasses.getRL();
+
+//                                int maximumClassNumber = bitClasses.getBL();
+                int maximumClassNumber = bitClasses.getBL();
+                boolean unknownBool = bitClasses.getB();
+
+                // Here starts the class data (repeating)
+                
+                BitBuffer bitClassesStrings = BitBuffer.wrap(expandedData);
+
+				/*
+				 * Find the string section. We do this by reading the buffer
+				 * backwards from the end. The size of the string data area is
+				 * stored as either a 15 bit number or a 31 bit number at the
+				 * end of the buffer. Once we have the size, move back from
+				 * there to get the start of the string data area.
+				 */
+                
+                /**
+                 * totalSizeInBits does not include the signature and sizeOfClassDataArea at
+                 * the start of the buffer, so add those.
+                 */
+                int endDataPosition = 24*8 + totalSizeInBits;
+                
+                /*
+                 * The last bit indicates if there is a string stream.
+                 * All versions 2007+ have a string stream, and we don't support
+                 * prior versions, so this bit should always be set.
+                 */
+                endDataPosition -= 1;
+                bitClassesStrings.position(endDataPosition);
+                boolean endBit = bitClassesStrings.getB();
+                assert endBit;
+
+                endDataPosition -= 16;
+                bitClassesStrings.position(endDataPosition);
+                int strDataSize = bitClassesStrings.getRS();
+                if ((strDataSize & 0x8000) != 0) {
+                	endDataPosition -= 16;
+                    bitClassesStrings.position(endDataPosition);
+                    int hiSize = bitClassesStrings.getRS();
+                    strDataSize = (strDataSize & 0x7FFF) | (hiSize << 15);
+                }
+                
+                bitClassesStrings.setEndOffset(endDataPosition);
+                
+                endDataPosition -= strDataSize;
+                bitClassesStrings.position(endDataPosition);
+
+                bitClasses.setEndOffset(endDataPosition);
+                
+                // Repeated until we exhaust the data
+                do {
+                	ClassData classData = new ClassData(bitClasses, bitClassesStrings);
+                	classes.add(classData);
+                } while (bitClasses.hasMoreData());
+                
+				/*
+				 * If all goes to plan, we should at the same time exactly reach
+				 * the end of both the data section and the string section.
+				 */
+                assert !bitClassesStrings.hasMoreData();
+                
+                int expectedNumberOfClasses = maximumClassNumber - 499;
+                assert classes.size() == expectedNumberOfClasses;
+                
+            } else {
+                for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+                    int pageNumber = sectionPageBuffer.getInt();
+                    int dataSize = sectionPageBuffer.getInt();
+                    long startOffset = sectionPageBuffer.getLong();
+                }
+            }
+
+        }
 
 	}
+
+	private SectionPage readSystemSectionPage(ByteBuffer buffer, int expectedPageType) {
+        int pageType = buffer.getInt();
+        int decompressedSize = buffer.getInt();
+        int compressedSize = buffer.getInt();
+        int compressionType = buffer.getInt();
+        int sectionPageChecksum = buffer.getInt();
+
+        byte [] compressedData = new byte[compressedSize];
+        buffer.get(compressedData);
+
+        int pageType2 = buffer.getInt();
+        int decompressedSize2 = buffer.getInt();
+        int compressedSize2 = buffer.getInt();
+        int compressionType2 = buffer.getInt();
+        int sectionPageChecksum2 = buffer.getInt();
+
+        if (pageType != expectedPageType) {
+			throw new RuntimeException();
+		}
+		
+        byte [] expandedData = new Expander(compressedData, decompressedSize).result;
+
+        SectionPage result = new SectionPage(pageType, expandedData);
+
+        return result;
+    }
 
 	private void expectInt(ByteBuffer buffer, int expected) {
 		int actual = buffer.getInt();
