@@ -7,10 +7,10 @@
  * the rights to use, copy, modify, merge, publish, distribute, sublicense,
  * and/or sell copies of the Software, and to permit persons to whom the
  * Software is furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included
  * in all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
  * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -34,16 +34,17 @@ import java.util.List;
 
 /**
  * Reads a DWG format file.
- *  
+ *
  * @author Nigel Westbury
  */
 public class Reader {
 
 	private Issues issues = new Issues();
-	
+
+
 	// The following fields are extracted from the first 128 bytes of the file.
-	
-	private String fileVersionAsString;
+
+    private FileVersion fileVersion;
 	private byte maintenanceReleaseVersion;
 	private int previewAddress;
 	private byte dwgVersion;
@@ -72,13 +73,9 @@ public class Reader {
 
 			byte [] versionAsByteArray = new byte[6];
 			buffer.get(versionAsByteArray);
-			fileVersionAsString = new String(versionAsByteArray);
+			String fileVersionAsString = new String(versionAsByteArray);
+			fileVersion = new FileVersion(fileVersionAsString);
 
-			switch (fileVersionAsString) {
-			case "AC1021":
-				throw new UnsupportedFileVersionException("Release 21 (2007) files are not supported.  Only release 22 (2010) and later are supported.");
-			}
-			
 			expect(buffer, new byte[] { 0, 0, 0, 0, 0});
 			maintenanceReleaseVersion = buffer.get();
 			expectAnyOneOf(buffer, new byte[] { 0, 1, 3});
@@ -90,14 +87,14 @@ public class Reader {
 			unknown2 = buffer.get();
 			unknown3 = buffer.get();
 			int securityFlags = buffer.getInt();
-			
+
 			areDataEncrypted = (securityFlags & 0x0001) != 0;
 			arePropertiesEncrypted = (securityFlags & 0x0002) != 0;
 			signData = (securityFlags & 0x0010) != 0;
 			addTimestamp = (securityFlags & 0x0020) != 0;
 
 			buffer.position(32);
-			
+
 			summaryInfoAddress = buffer.getInt();
 			vbaProjectAddress = buffer.getInt();
 			expect(buffer, new byte[] { (byte)0x80, 0, 0, 0});
@@ -158,7 +155,7 @@ public class Reader {
 			buffer.get(theRest);
 
 			readSystemSectionPage(buffer, sectionPageMapAddress, sectionMapId);
-			
+
 		}
 	}
 
@@ -172,17 +169,17 @@ public class Reader {
 		buffer.position(0x100 + (int)sectionPageMapAddress);
 
         SectionPage sectionPage = readSystemSectionPage(buffer, 0x41630E3B);
-		
+
 		// 4.4 2004 Section page map
 
 		ByteBuffer expandedBuffer = ByteBuffer.wrap(sectionPage.expandedData);
-		
+
 		expandedBuffer.order(ByteOrder.LITTLE_ENDIAN);
 		int address = 0x100;
 		do {
 			int sectionPageNumber = expandedBuffer.getInt();
 			int sectionSize = expandedBuffer.getInt();
-			
+
 			if (sectionPageNumber > 0) {
 				sections .add(new Section(sectionPageNumber, address, sectionSize));
 			} else {
@@ -190,16 +187,16 @@ public class Reader {
 				int left = expandedBuffer.getInt();
 				int right = expandedBuffer.getInt();
 				int hex00 = expandedBuffer.getInt();
-				
+
 				// Really only useful if writing files is supported
 				// but add to our data structure so we are ready.
 				sections.add(new SectionGap(sectionPageNumber, address, sectionSize, parent, left, right));
 			}
-			
+
 			address += sectionSize;
 		} while (expandedBuffer.position() != sectionPage.expandedData.length);
 
-		
+
 
 
         // Is this 4.5????
@@ -335,14 +332,7 @@ public class Reader {
 
                 bitClasses.position(16*8);
 
-                int sizeOfTheSection = bitClasses.getRL();
-                
-                // 2013 and onwards: need this according to doc,
-                // but no test for this yet.
-                    //                    bitClasses.getBLL();
-                
-
-                // TODO finish this long list....
+                Header header = new Header(bitClasses, fileVersion);
 
             } else if (sectionName.equals("AcDb:Objects")) {
                 int pageNumber = sectionPageBuffer.getInt();
@@ -422,7 +412,7 @@ public class Reader {
                 boolean unknownBool = bitClasses.getB();
 
                 // Here starts the class data (repeating)
-                
+
                 BitBuffer bitClassesStrings = BitBuffer.wrap(expandedData);
 
 				/*
@@ -432,13 +422,13 @@ public class Reader {
 				 * end of the buffer. Once we have the size, move back from
 				 * there to get the start of the string data area.
 				 */
-                
+
                 /**
                  * totalSizeInBits does not include the signature and sizeOfClassDataArea at
                  * the start of the buffer, so add those.
                  */
                 int endDataPosition = 24*8 + totalSizeInBits;
-                
+
                 /*
                  * The last bit indicates if there is a string stream.
                  * All versions 2007+ have a string stream, and we don't support
@@ -458,29 +448,29 @@ public class Reader {
                     int hiSize = bitClassesStrings.getRS();
                     strDataSize = (strDataSize & 0x7FFF) | (hiSize << 15);
                 }
-                
+
                 bitClassesStrings.setEndOffset(endDataPosition);
-                
+
                 endDataPosition -= strDataSize;
                 bitClassesStrings.position(endDataPosition);
 
                 bitClasses.setEndOffset(endDataPosition);
-                
+
                 // Repeated until we exhaust the data
                 do {
                 	ClassData classData = new ClassData(bitClasses, bitClassesStrings);
                 	classes.add(classData);
                 } while (bitClasses.hasMoreData());
-                
+
 				/*
 				 * If all goes to plan, we should at the same time exactly reach
 				 * the end of both the data section and the string section.
 				 */
                 assert !bitClassesStrings.hasMoreData();
-                
+
                 int expectedNumberOfClasses = maximumClassNumber - 499;
                 assert classes.size() == expectedNumberOfClasses;
-                
+
             } else {
                 for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
                     int pageNumber = sectionPageBuffer.getInt();
@@ -512,7 +502,7 @@ public class Reader {
         if (pageType != expectedPageType) {
 			throw new RuntimeException();
 		}
-		
+
         byte [] expandedData = new Expander(compressedData, decompressedSize).result;
 
         SectionPage result = new SectionPage(pageType, expandedData);
@@ -551,16 +541,16 @@ public class Reader {
 	}
 
 	public String getVersion() {
-		return fileVersionAsString;
+		return fileVersion.getVersionYear();
 	}
 
 	public class Section {
 		final int sectionPageNumber;
-		
+
 		final int address;
-		
+
 		final int sectionSize;
-		
+
 		public Section(int sectionPageNumber, int address, int sectionSize) {
 			this.sectionPageNumber = sectionPageNumber;
 			this.address = address;
@@ -571,11 +561,11 @@ public class Reader {
 
 	public class SectionGap extends Section {
 		final int parent;
-		
+
 		final int left;
-		
+
 		final int right;
-		
+
 		public SectionGap(int sectionPageNumber, int address, int sectionSize, int parent, int left, int right) {
 			super(sectionPageNumber, address, sectionSize);
 			this.parent = parent;
@@ -584,5 +574,5 @@ public class Reader {
 		}
 
 	}
-	
+
 }
