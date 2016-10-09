@@ -119,33 +119,187 @@ public class Header
 	private Value<Handle> CMLSTYLE = new Value<>();
 	private Value<Handle> HANDSEED = new Value<>();
 	private Value<Double> PSVPSCALE = new Value<>();
-	private Value<Point3D> INSBASE = new Value<>();
-	private Value<Point3D> EXTMIN = new Value<>();
-	private Value<Point3D> EXTMAX = new Value<>();
-	private Value<Point2D> LIMMIN = new Value<>();
-	private Value<Point2D> LIMMAX = new Value<>();
-	private Value<Double> ELEVATION = new Value<>();
-	private Value<Point3D> UCSORG = new Value<>();
-	private Value<Point3D> UCSXDIR = new Value<>();
-	private Value<Point3D> UCSYDIR = new Value<>();
-	private Value<Handle> UCSNAME = new Value<>();
-	private Value<Handle> PUCSORTHOREF = new Value<>();
-	private Value<Integer> PUCSORTHOVIEW = new Value<>();
-	private Value<Handle> PUCSBASE = new Value<>();
-	private Value<Point3D> PUCSORGTOP = new Value<>();
-	private Value<Point3D> PUCSORGBOTTOM = new Value<>();
-	private Value<Point3D> PUCSORGLEFT = new Value<>();
-	private Value<Point3D> PUCSORGRIGHT = new Value<>();
-	private Value<Point3D> PUCSORGFRONT = new Value<>();
-	private Value<Point3D> PUCSORGBACK = new Value<>();
+	private SpaceHeader paperSpace;
+	private SpaceHeader modelSpace;
+	private Value<String> DIMPOST = new Value<>();
+	private Value<String> DIMAPOST = new Value<>();
+	private Value<Double> DIMSCALE = new Value<>();
+	private Value<Double> DIMASZ = new Value<>();
+	private Value<Double> DIMEXO = new Value<>();
+	private Value<Double> DIMDLI = new Value<>();
+	private Value<Double> DIMEXE = new Value<>();
+	private Value<Double> DIMRND = new Value<>();
+	private Value<Double> DIMDLE = new Value<>();
+	private Value<Double> DIMTP = new Value<>();
+	private Value<Double> DIMTM = new Value<>();
+	private Value<Double> DIMFXL = new Value<>();
+	private Value<Double> DIMJOGANG = new Value<>();
+	private Value<Integer> DIMTFILL = new Value<>();
+	private Value<CmColor> DIMTFILLCLR = new Value<>();
+	private Value<Boolean> DIMTOL = new Value<>();
+	private Value<Boolean> DIMLIM = new Value<>();
+	private Value<Boolean> DIMTIH = new Value<>();
+	private Value<Boolean> DIMTOH = new Value<>();
+	private Value<Boolean> DIMSE1 = new Value<>();
+	private Value<Boolean> DIMSE2 = new Value<>();
+	private Value<Integer> DIMTAD = new Value<>();
+	private Value<Integer> DIMZIN = new Value<>();
+	private Value<Integer> DIMAZIN = new Value<>();
+	private Value<Integer> DIMARCSYM = new Value<>();
+	private Value<Double> DIMTXT = new Value<>();
+	private Value<Double> DIMCEN = new Value<>();
+	private Value<Double> DIMTSZ = new Value<>();
+	private Value<Double> DIMALTF = new Value<>();
+	private Value<Double> DIMLFAC = new Value<>();
+	private Value<Double> DIMTVP = new Value<>();
+	private Value<Double> DIMTFAC = new Value<>();
+	private Value<Double> DIMGAP = new Value<>();
+	private Value<Double> DIMALTRND = new Value<>();
+	private Value<Boolean> DIMALT = new Value<>();
+	private Value<Integer> DIMALTD = new Value<>();
+	private Value<Boolean> DIMTOFL = new Value<>();
+	private Value<Boolean> DIMSAH = new Value<>();
+	private Value<Boolean> DIMTIX = new Value<>();
+	private Value<Boolean> DIMSOXD = new Value<>();
+	private Value<CmColor> DIMCLRD = new Value<>();
+	private Value<CmColor> DIMCLRE = new Value<>();
+	private Value<CmColor> DIMCLRT = new Value<>();
+	private Value<Integer> DIMADEC = new Value<>();
+	private Value<Integer> DIMDEC = new Value<>();
+	private Value<Integer> DIMTDEC = new Value<>();
+	private Value<Integer> DIMALTU = new Value<>();
+	private Value<Integer> DIMALTTD = new Value<>();
+	private Value<Integer> DIMAUNIT = new Value<>();
+	private Value<Integer> DIMFRAC = new Value<>();
+	private Value<Integer> DIMLUNIT = new Value<>();
+	private Value<Integer> DIMDSEP = new Value<>();
+	private Value<Integer> DIMTMOVE = new Value<>();
+	private Value<Integer> DIMJUST = new Value<>();
+	private Value<Boolean> DIMSD1 = new Value<>();
+	private Value<Boolean> DIMSD2 = new Value<>();
+	private Value<Integer> DIMTOLJ = new Value<>();
+	private Value<Integer> DIMTZIN = new Value<>();
+	private Value<Integer> DIMALTZ = new Value<>();
+	private Value<Integer> DIMALTTZ = new Value<>();
+	private Value<Boolean> DIMUPT = new Value<>();
+	private Value<Integer> DIMATFIT = new Value<>();
+	private Value<Boolean> DIMFXLON = new Value<>();
+	private Value<Boolean> DIMTXTDIRECTION = new Value<>();
+	private Value<Double> DIMALTMZF = new Value<>();
+	private Value<String> DIMALTMZS = new Value<>();
+	private Value<Double> DIMMZF = new Value<>();
+	private Value<String> DIMMZS = new Value<>();
+	private Value<Handle> DIMTXSTY = new Value<>();
+	private Value<Handle> DIMLDRBLK = new Value<>();
+	private Value<Handle> DIMBLK = new Value<>();
+	private Value<Handle> DIMBLK1 = new Value<>();
+	private Value<Handle> DIMBLK2 = new Value<>();
+	private Value<Handle> DIMLTYPE = new Value<>();
+	private Value<Handle> DIMLTEX1 = new Value<>();
+	private Value<Handle> DIMLTEX2 = new Value<>();
+	private Value<Integer> DIMLWD = new Value<>();
+	private Value<Integer> DIMLWE = new Value<>();
+	private Value<Handle> BLOCK_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> LAYER_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> STYLE_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> LINETYPE_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> VIEW_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> UCS_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> VPORT_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> APPID_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> DIMSTYLE_CONTROL_OBJECT = new Value<>();
+	private Value<Handle> DICTIONARY_ACAD_GROUP = new Value<>();
+	private Value<Handle> DICTIONARY_ACAD_MLINESTYLE = new Value<>();
+	private Value<Handle> DICTIONARY_NAMED_OBJECTS = new Value<>();
+	private Value<Integer> TSTACKALIGN = new Value<>();
+	private Value<Integer> TSTACKSIZE = new Value<>();
+	private Value<String> HYPERLINKBASE = new Value<>();
+	private Value<String> STYLESHEET = new Value<>();
+	private Value<Handle> DICTIONARY_LAYOUTS = new Value<>();
+	private Value<Handle> DICTIONARY_PLOTSETTINGS = new Value<>();
+	private Value<Handle> DICTIONARY_PLOTSTYLES = new Value<>();
+	private Value<Handle> DICTIONARY_MATERIALS = new Value<>();
+	private Value<Handle> DICTIONARY_COLORS = new Value<>();
+	private Value<Handle> DICTIONARY_VISUALSTYLE = new Value<>();
+	private Value<Handle> UNKNOWN = new Value<>();
+	private Value<Integer> Flags = new Value<>();
+	private Value<Integer> INSUNITS = new Value<>();
+	private Value<Integer> CEPSNTYPE = new Value<>();
+	private Value<Handle> CPSNID = new Value<>();
+	private Value<String> FINGERPRINTGUID = new Value<>();
+	private Value<String> VERSIONGUID = new Value<>();
+	private Value<Integer> SORTENTS = new Value<>();
+	private Value<Integer> INDEXCTL = new Value<>();
+	private Value<Integer> HIDETEXT = new Value<>();
+	private Value<Integer> XCLIPFRAME = new Value<>();
+	private Value<Integer> DIMASSOC = new Value<>();
+	private Value<Integer> HALOGAP = new Value<>();
+	private Value<Integer> OBSCUREDCOLOR = new Value<>();
+	private Value<Integer> INTERSECTIONCOLOR = new Value<>();
+	private Value<Integer> OBSCUREDLTYPE = new Value<>();
+	private Value<Integer> INTERSECTIONDISPLAY = new Value<>();
+	private Value<String> PROJECTNAME = new Value<>();
+	private Value<Handle> BLOCK_RECORD_PAPER_SPACE = new Value<>();
+	private Value<Handle> BLOCK_RECORD_MODEL_SPACE = new Value<>();
+	private Value<Handle> LTYPE_BYLAYER = new Value<>();
+	private Value<Handle> LTYPE_BYBLOCK = new Value<>();
+	private Value<Handle> LTYPE_CONTINUOUS = new Value<>();
+	private Value<Boolean> CAMERADISPLAY = new Value<>();
+	private Value<Integer> Unknown7 = new Value<>();
+	private Value<Integer> Unknown8 = new Value<>();
+	private Value<Double> Unknown9 = new Value<>();
+	private Value<Double> STEPSPERSEC = new Value<>();
+	private Value<Double> STEPSIZE = new Value<>();
+	private Value<Double> ThreeDDWFPREC = new Value<>();
+	private Value<Double> LENSLENGTH = new Value<>();
+	private Value<Double> CAMERAHEIGHT = new Value<>();
+	private Value<Integer> SOLIDHIST = new Value<>();
+	private Value<Integer> SHOWHIST = new Value<>();
+	private Value<Double> PSOLWIDTH = new Value<>();
+	private Value<Double> PSOLHEIGHT = new Value<>();
+	private Value<Double> LOFTANG1 = new Value<>();
+	private Value<Double> LOFTANG2 = new Value<>();
+	private Value<Double> LOFTMAG1 = new Value<>();
+	private Value<Double> LOFTMAG2 = new Value<>();
+	private Value<Integer> LOFTPARAM = new Value<>();
+	private Value<Integer> LOFTNORMALS = new Value<>();
+	private Value<Double> LATITUDE = new Value<>();
+	private Value<Double> LONGITUDE = new Value<>();
+	private Value<Double> NORTHDIRECTION = new Value<>();
+	private Value<Integer> TIMEZONE = new Value<>();
+	private Value<Integer> LIGHTGLYPHDISPLAY = new Value<>();
+	private Value<Integer> TILEMODELIGHTSYNCH = new Value<>();
+	private Value<Integer> DWFFRAME = new Value<>();
+	private Value<Integer> DGNFRAME = new Value<>();
+	private Value<Boolean> UnknownBit = new Value<>();
+	private Value<CmColor> INTERFERECOLOR = new Value<>();
+	private Value<Handle> INTERFEREOBJVS = new Value<>();
+	private Value<Handle> INTERFEREVPVS = new Value<>();
+	private Value<Handle> DRAGVS = new Value<>();
+	private Value<Integer> CSHADOW = new Value<>();
+	private Value<Double> Unknown10 = new Value<>();
+	private Value<Integer> UnknownShort1 = new Value<>();
+	private Value<Integer> UnknownShort2 = new Value<>();
+	private Value<Integer> UnknownShort3 = new Value<>();
+	private Value<Integer> UnknownShort4 = new Value<>();
 
-    public Header(BitBuffer bitBuffer, FileVersion version) {
-        int sizeOfTheSection = bitBuffer.getRL();
+    public Header(BitStreams bitStreams, FileVersion version) {
+    	
+    	BitBuffer bitBuffer = bitStreams.getDataStream();
+    	BitBuffer stringStream = bitStreams.getStringStream();
+    	BitBuffer handleStream = bitStreams.getHandleStream();
 
+    	// This is a hack to get the strings to line up.  They are otherwise off by one
+    	// (for example, see the two GUIDs), and an extra unread string would otherwise exist at
+    	// the end of the stream.
+    	String unknownString = stringStream.getTU();
+        
         if (version.is2013OrLater()) {
             // Read-only
             long REQUIREDVERSIONS = bitBuffer.getBLL();
         }
+
+
         
         // This is where the 412148564080.0 bits were actually found in a bit
         // scan.  This does not appear to agree with the specification so further
@@ -157,10 +311,10 @@ public class Header
         bitBuffer.expectBD(1.0);
         bitBuffer.expectBD(1.0);
 
-//        String unknownTextString1 = bitBuffer.getTU();
-//        String unknownTextString2 = bitBuffer.getTU();
-//        String unknownTextString3 = bitBuffer.getTU();
-//        String unknownTextString4 = bitBuffer.getTU();
+        String unknownTextString1 = stringStream.getTU();
+        String unknownTextString2 = stringStream.getTU();
+        String unknownTextString3 = stringStream.getTU();
+        String unknownTextString4 = stringStream.getTU();
 
         long unknownLong1 = bitBuffer.getBL();  // 0x24
         long unknownLong2 = bitBuffer.getBL();  // 0x00
@@ -217,7 +371,6 @@ public class Header
         bitBuffer.BS(CMLJUST);
         bitBuffer.BS(TEXTQLTY);
         bitBuffer.BD(LTSCALE);
-//        Open Design Specification for .dwg files 71
         bitBuffer.BD(TEXTSIZE);
         bitBuffer.BD(TRACEWID);
         bitBuffer.BD(SKETCHINC);
@@ -245,60 +398,21 @@ public class Header
         bitBuffer.BL(Unknown6);
         bitBuffer.duration(TDINDWG);
         bitBuffer.duration(TDUSRTIMER);
-  
         bitBuffer.CMC(CECOLOR);
         bitBuffer.H(HANDSEED); // The next handle, with an 8-bit length specifier preceding the handle bytes (standard hex handle form) (code 0). The HANDSEED is not part of the handle stream, but of the normal data stream (relevant for R21 and later).
-//        bitBuffer.H(CLAYER, HandleType.HARD_POINTER);
-//        bitBuffer.H(TEXTSTYLE, HandleType.HARD_POINTER);
-////        Open Design Specification for .dwg files 72
-//        bitBuffer.H(CELTYPE, HandleType.HARD_POINTER);
-//        bitBuffer.H(CMATERIAL, HandleType.HARD_POINTER);
-//        bitBuffer.H(DIMSTYLE, HandleType.HARD_POINTER);
-//        bitBuffer.H(CMLSTYLE, HandleType.HARD_POINTER);
+        handleStream.H(CLAYER, HandleType.HARD_POINTER);
+        handleStream.H(TEXTSTYLE, HandleType.HARD_POINTER);
+        handleStream.H(CELTYPE, HandleType.HARD_POINTER);
+        handleStream.H(CMATERIAL, HandleType.HARD_POINTER);
+        handleStream.H(DIMSTYLE, HandleType.HARD_POINTER);
+        handleStream.H(CMLSTYLE, HandleType.HARD_POINTER);
         bitBuffer.BD(PSVPSCALE);
-        bitBuffer.threeBD(INSBASE); // (PSPACE)
-        bitBuffer.threeBD(EXTMIN); // (PSPACE)
-        bitBuffer.threeBD(EXTMAX); // (PSPACE)
-        bitBuffer.twoRD(LIMMIN); // (PSPACE)
-        bitBuffer.twoRD(LIMMAX); // (PSPACE)
-        bitBuffer.BD(ELEVATION); // (PSPACE)
-        bitBuffer.threeBD(UCSORG); // (PSPACE)
-        bitBuffer.threeBD(UCSXDIR); // (PSPACE)
-        bitBuffer.threeBD(UCSYDIR); // (PSPACE)
-//        bitBuffer.H(UCSNAME, HandleType.HARD_POINTER); // (PSPACE)
-//        bitBuffer.H(PUCSORTHOREF, HandleType.HARD_POINTER);
-        bitBuffer.BS(PUCSORTHOVIEW);
-//        bitBuffer.H(PUCSBASE, HandleType.HARD_POINTER);
-        bitBuffer.threeBD(PUCSORGTOP);
-        bitBuffer.threeBD(PUCSORGBOTTOM);
-        bitBuffer.threeBD(PUCSORGLEFT);
-        bitBuffer.threeBD(PUCSORGRIGHT);
-        bitBuffer.threeBD(PUCSORGFRONT);
-        bitBuffer.threeBD(PUCSORGBACK);
-        bitBuffer.threeBD(INSBASE); // (MSPACE)
-        bitBuffer.threeBD(EXTMIN); // (MSPACE)
-        bitBuffer.threeBD(EXTMAX); // (MSPACE)
-        bitBuffer.twoRD(LIMMIN); // (MSPACE)
-        bitBuffer.twoRD(LIMMAX); // (MSPACE)
-        bitBuffer.BD(ELEVATION); // (MSPACE)
-        bitBuffer.threeBD(UCSORG); // (MSPACE)
-        bitBuffer.threeBD(UCSXDIR); // (MSPACE)
-        bitBuffer.threeBD(UCSYDIR); // (MSPACE)
-//        bitBuffer.H(UCSNAME, HandleType.HARD_POINTER); // (MSPACE)
-/*        
-        bitBuffer.H(UCSORTHOREF, HandleType.HARD_POINTER);
-//        Open Design Specification for .dwg files 73
-        bitBuffer.BS(UCSORTHOVIEW);
-        bitBuffer.H(UCSBASE, HandleType.HARD_POINTER);
-        bitBuffer.threeBD(UCSORGTOP);
-        bitBuffer.threeBD(UCSORGBOTTOM);
-        bitBuffer.threeBD(UCSORGLEFT);
-        bitBuffer.threeBD(UCSORGRIGHT);
-        bitBuffer.threeBD(UCSORGFRONT);
-        bitBuffer.threeBD(UCSORGBACK);
+
+        paperSpace = new SpaceHeader(bitBuffer, handleStream);
+        modelSpace = new SpaceHeader(bitBuffer, handleStream);
         
-        bitBuffer.doTV(DIMPOST);
-        bitBuffer.doTV(DIMAPOST);
+        stringStream.TU(DIMPOST);
+        stringStream.TU(DIMAPOST);
         bitBuffer.BD(DIMSCALE);
         bitBuffer.BD(DIMASZ);
         bitBuffer.BD(DIMEXO);
@@ -362,61 +476,63 @@ public class Header
         bitBuffer.B(DIMFXLON);
         bitBuffer.B(DIMTXTDIRECTION);
         bitBuffer.BD(DIMALTMZF);
-        T : DIMALTMZS);
+        stringStream.TU(DIMALTMZS);
         bitBuffer.BD(DIMMZF);
-        T : DIMMZS);
-        R2000+ Only:
-        bitBuffer.H(DIMTXSTY, HandleType.HARD_POINTER);
-        bitBuffer.H(DIMLDRBLK, HandleType.HARD_POINTER);
-        bitBuffer.H(DIMBLK, HandleType.HARD_POINTER);
-bitBuffer.H(DIMBLK1, HandleType.HARD_POINTER);
-bitBuffer.H(DIMBLK2, HandleType.HARD_POINTER);
-bitBuffer.H(DIMLTYPE, HandleType.HARD_POINTER);
-bitBuffer.H(DIMLTEX1, HandleType.HARD_POINTER);
-bitBuffer.H(DIMLTEX2, HandleType.HARD_POINTER);
-bitBuffer.BS(DIMLWD);
-bitBuffer.BS(DIMLWE);
-bitBuffer.H(BLOCK_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(LAYER_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(STYLE_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(LINETYPE_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(VIEW_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(UCS_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(VPORT_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(APPID_CONTROL_OBJECT, HandleType.HARD_OWNER);
-bitBuffer.H(DIMSTYLE CONTROL OBJECT, HandleType.HARD_OWNER);
-        DICTIONARY (ACAD_GROUP, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (ACAD_MLINESTYLE, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (NAMED OBJECTS, HandleType.HARD_OWNER);
-        bitBuffer.BS(TSTACKALIGN, default = 1 (not present in DXF)
-        bitBuffer.BS(TSTACKSIZE, default = 70 (not present in DXF)
-        bitBuffer.doTV(HYPERLINKBASE);
-        bitBuffer.doTV(STYLESHEET);
-        bitBuffer.H(DICTIONARY (LAYOUTS, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (PLOTSETTINGS, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (PLOTSTYLES, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (MATERIALS, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (COLORS, HandleType.HARD_POINTER);
-        bitBuffer.H(DICTIONARY (VISUALSTYLE, HandleType.HARD_POINTER);
+        stringStream.TU(DIMMZS);
+        handleStream.H(DIMTXSTY, HandleType.HARD_POINTER);
+        handleStream.H(DIMLDRBLK, HandleType.HARD_POINTER);
+        handleStream.H(DIMBLK, HandleType.HARD_POINTER);
+        handleStream.H(DIMBLK1, HandleType.HARD_POINTER);
+        handleStream.H(DIMBLK2, HandleType.HARD_POINTER);
+        handleStream.H(DIMLTYPE, HandleType.HARD_POINTER);
+        handleStream.H(DIMLTEX1, HandleType.HARD_POINTER);
+        handleStream.H(DIMLTEX2, HandleType.HARD_POINTER);
+        bitBuffer.BS(DIMLWD);
+        bitBuffer.BS(DIMLWE);
+        handleStream.H(BLOCK_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(LAYER_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(STYLE_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(LINETYPE_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(VIEW_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(UCS_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(VPORT_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(APPID_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(DIMSTYLE_CONTROL_OBJECT, HandleType.HARD_OWNER);
+        handleStream.H(DICTIONARY_ACAD_GROUP, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_ACAD_MLINESTYLE, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_NAMED_OBJECTS, HandleType.HARD_OWNER);
+        bitBuffer.BS(TSTACKALIGN); // default = 1 (not present in DXF)
+        bitBuffer.BS(TSTACKSIZE); // default = 70 (not present in DXF)
+        stringStream.TU(HYPERLINKBASE);
+        stringStream.TU(STYLESHEET);
+        handleStream.H(DICTIONARY_LAYOUTS, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_PLOTSETTINGS, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_PLOTSTYLES, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_MATERIALS, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_COLORS, HandleType.HARD_POINTER);
+        handleStream.H(DICTIONARY_VISUALSTYLE, HandleType.HARD_POINTER);
 
-             if (version2013OrLater()) {
-                 bitBuffer.H(UNKNOWN, HandleType.HARD_POINTER);
-             }
+        if (version.is2013OrLater()) {
+        	handleStream.H(UNKNOWN, HandleType.HARD_POINTER);
+        }
 
-        bitBuffer.BL(Flags:
-            CELWEIGHT Flags & 0x001F
-            ENDCAPS Flags & 0x0060
-            JOINSTYLE Flags & 0x0180
-            LWDISPLAY !(Flags & 0x0200)
-            XEDIT !(Flags & 0x0400)
-            EXTNAMES Flags & 0x0800
-            PSTYLEMODE Flags & 0x2000
-            OLESTARTUP Flags & 0x4000
-            bitBuffer.BS(INSUNITS);
+        bitBuffer.BL(Flags);
+//            CELWEIGHT Flags & 0x001F
+//            ENDCAPS Flags & 0x0060
+//            JOINSTYLE Flags & 0x0180
+//            LWDISPLAY !(Flags & 0x0200)
+//            XEDIT !(Flags & 0x0400)
+//            EXTNAMES Flags & 0x0800
+//            PSTYLEMODE Flags & 0x2000
+//            OLESTARTUP Flags & 0x4000
+
+        	bitBuffer.BS(INSUNITS);
             bitBuffer.BS(CEPSNTYPE);
-            bitBuffer.H(CPSNID, HandleType.HARD_POINTER); // present only if CEPSNTYPE == 3
-            bitBuffer.doTV(FINGERPRINTGUID);
-            bitBuffer.doTV(VERSIONGUID);
+            if (CEPSNTYPE.get() == 3) {
+            	handleStream.H(CPSNID, HandleType.HARD_POINTER); // present only if CEPSNTYPE == 3
+            }
+            stringStream.TU(FINGERPRINTGUID);
+            stringStream.TU(VERSIONGUID);
             bitBuffer.RC(SORTENTS);
             bitBuffer.RC(INDEXCTL);
             bitBuffer.RC(HIDETEXT);
@@ -427,19 +543,19 @@ bitBuffer.H(DIMSTYLE CONTROL OBJECT, HandleType.HARD_OWNER);
             bitBuffer.BS(INTERSECTIONCOLOR);
             bitBuffer.RC(OBSCUREDLTYPE);
             bitBuffer.RC(INTERSECTIONDISPLAY);
-            bitBuffer.doTV(PROJECTNAME);
-            bitBuffer.H(BLOCK_RECORD (*PAPER_SPACE, HandleType.HARD_POINTER);
-            bitBuffer.H(BLOCK_RECORD (*MODEL_SPACE, HandleType.HARD_POINTER);
-            bitBuffer.H(LTYPE (BYLAYER, HandleType.HARD_POINTER);
-            bitBuffer.H(LTYPE (BYBLOCK, HandleType.HARD_POINTER);
-            bitBuffer.H(LTYPE (CONTINUOUS, HandleType.HARD_POINTER);
+            stringStream.TU(PROJECTNAME);
+            handleStream.H(BLOCK_RECORD_PAPER_SPACE, HandleType.HARD_POINTER);
+            handleStream.H(BLOCK_RECORD_MODEL_SPACE, HandleType.HARD_POINTER);
+            handleStream.H(LTYPE_BYLAYER, HandleType.HARD_POINTER);
+            handleStream.H(LTYPE_BYBLOCK, HandleType.HARD_POINTER);
+            handleStream.H(LTYPE_CONTINUOUS, HandleType.HARD_POINTER);
             bitBuffer.B(CAMERADISPLAY);
-            bitBuffer.BL(unknown);
-            bitBuffer.BL(unknown);
-            bitBuffer.BD(unknown);
+            bitBuffer.BL(Unknown7);
+            bitBuffer.BL(Unknown8);
+            bitBuffer.BD(Unknown9);
             bitBuffer.BD(STEPSPERSEC);
             bitBuffer.BD(STEPSIZE);
-            bitBuffer.BD(3DDWFPREC);
+            bitBuffer.BD(ThreeDDWFPREC);
             bitBuffer.BD(LENSLENGTH);
             bitBuffer.BD(CAMERAHEIGHT);
             bitBuffer.RC(SOLIDHIST);
@@ -460,19 +576,19 @@ bitBuffer.H(DIMSTYLE CONTROL OBJECT, HandleType.HARD_OWNER);
             bitBuffer.RC(TILEMODELIGHTSYNCH);
             bitBuffer.RC(DWFFRAME);
             bitBuffer.RC(DGNFRAME);
-            bitBuffer.B(unknown);
+            bitBuffer.B(UnknownBit);
             bitBuffer.CMC(INTERFERECOLOR);
-            bitBuffer.H(INTERFEREOBJVS, HandleType.HARD_POINTER);
-            bitBuffer.H(INTERFEREVPVS, HandleType.HARD_POINTER);
-            bitBuffer.H(DRAGVS, HandleType.HARD_POINTER);
+            handleStream.H(INTERFEREOBJVS, HandleType.HARD_POINTER);
+            handleStream.H(INTERFEREVPVS, HandleType.HARD_POINTER);
+            handleStream.H(DRAGVS, HandleType.HARD_POINTER);
             bitBuffer.RC(CSHADOW);
-            bitBuffer.BD(unknown);
-            bitBuffer.BS(unknown short (type 5/6 only) these do not seem to be required,
-            bitBuffer.BS(unknown short (type 5/6 only) even for type 5.
-            bitBuffer.BS(unknown short (type 5/6 only)
-            bitBuffer.BS(unknown short (type 5/6 only)
-           	bitBuffer.RS(CRC); //for the data section, starting after the sentinel. Use 0xC0C1 for the initial
-*/
+            bitBuffer.BD(Unknown10);
+            bitBuffer.BS(UnknownShort1); // unknown short (type 5/6 only) these do not seem to be required,
+            bitBuffer.BS(UnknownShort2); // unknown short (type 5/6 only) even for type 5.
+            bitBuffer.BS(UnknownShort3); // unknown short (type 5/6 only)
+            bitBuffer.BS(UnknownShort4); // unknown short (type 5/6 only)
+            int CRC = bitBuffer.getRS(); //for the data section, starting after the sentinel. Use 0xC0C1 for the initial
+
     }
 
 }

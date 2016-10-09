@@ -1,8 +1,17 @@
 
 public class CmColor {
 
+	public final int rgbValue;
+	
+	public final int colorByte;
+
 	public CmColor(int rgbValue, int colorByte) {
-		// TODO Auto-generated constructor stub
+		this.rgbValue = rgbValue;
+		this.colorByte = colorByte;
 	}
 
+    @Override
+    public String toString() {
+    	return "(rgb=" + rgbValue + ", colorByte=" + colorByte + ")";
+    }
 }

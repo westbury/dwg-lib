@@ -322,17 +322,43 @@ public class Reader {
                 // 8 Data section AcDb:Header (HEADER VARIABLES), page 68
 
                 // The signature
-                byte [] signature = new byte[16];
-                headerBuffer.get(signature);
-                if (!Arrays.equals(signature, new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F })) {
-                    throw new RuntimeException("bad signature: ");
+                byte[] headerSignature = new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F };
+
+                BitStreams bitStreams = new BitStreams(expandedData, headerSignature);
+                double x = 1.0;
+                long xx = Double.doubleToLongBits(x);
+                for (int k=0; k < 8 ; k++) {
+                	System.out.println(xx & 0xFF);
+                	xx >>= 8;
                 }
 
-                BitBuffer bitClasses = BitBuffer.wrap(expandedData);
+                Header header = new Header(bitStreams, fileVersion);
 
-                bitClasses.position(16*8);
+            } else if (sectionName.equals("AcDb:Handles")) {
+                    // Page 236 The Object Map
 
-                Header header = new Header(bitClasses, fileVersion);
+                    int pageNumber = sectionPageBuffer.getInt();
+                    int dataSize = sectionPageBuffer.getInt();
+                    long startOffset = sectionPageBuffer.getLong();
+
+                    Section classesData = null;
+                    for (Section eachSection : sections) {
+                        if (eachSection.sectionPageNumber == pageNumber) {
+                            classesData = eachSection;
+                            break;
+                        }
+                    }
+
+                    buffer.position(classesData.address);
+
+//                    byte [] compressedData = new byte[dataSize];
+//                    buffer.get(compressedData);
+//
+//                    // Was pageSize for last param below.
+//                    byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+//
+//                    ByteBuffer classesBuffer = ByteBuffer.wrap(expandedData);
+//                    classesBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
             } else if (sectionName.equals("AcDb:Objects")) {
                 int pageNumber = sectionPageBuffer.getInt();
@@ -384,77 +410,19 @@ public class Reader {
                 // Was pageSize for last param below.
                 byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
 
-                ByteBuffer classesBuffer = ByteBuffer.wrap(expandedData);
-                classesBuffer.order(ByteOrder.LITTLE_ENDIAN);
-
                 // 5.8 AcDb:Classes Section
 
-                // The signature
-                byte [] sig6 = new byte[16];
-                classesBuffer.get(sig6);
-                if (!Arrays.equals(sig6, new byte [] { (byte)0x8D, (byte)0xA1, (byte)0xC4, (byte)0xB8, (byte)0xC4, (byte)0xA9, (byte)0xF8, (byte)0xC5, (byte)0xC0, (byte)0xDC, (byte)0xF4, (byte)0x5F, (byte)0xE7, (byte)0xCF, (byte)0xB6, (byte)0x8A})) {
-                    throw new RuntimeException("bad signature: ");
-                }
+                byte[] classesSignature = new byte [] { (byte)0x8D, (byte)0xA1, (byte)0xC4, (byte)0xB8, (byte)0xC4, (byte)0xA9, (byte)0xF8, (byte)0xC5, (byte)0xC0, (byte)0xDC, (byte)0xF4, (byte)0x5F, (byte)0xE7, (byte)0xCF, (byte)0xB6, (byte)0x8A};
 
-                BitBuffer bitClasses = BitBuffer.wrap(expandedData);
+                BitStreams bitStreams = new BitStreams(expandedData, classesSignature);
 
-                bitClasses.position(16*8);
-
-                int sizeOfClassDataArea = bitClasses.getRL();
-
-
-
-                int unknown75 = bitClasses.getRL();
-                int totalSizeInBits = bitClasses.getRL();
-
-//                                int maximumClassNumber = bitClasses.getBL();
+                BitBuffer bitClasses = bitStreams.getDataStream();
+                BitBuffer bitClassesStrings = bitStreams.getStringStream();
+                
                 int maximumClassNumber = bitClasses.getBL();
                 boolean unknownBool = bitClasses.getB();
 
                 // Here starts the class data (repeating)
-
-                BitBuffer bitClassesStrings = BitBuffer.wrap(expandedData);
-
-				/*
-				 * Find the string section. We do this by reading the buffer
-				 * backwards from the end. The size of the string data area is
-				 * stored as either a 15 bit number or a 31 bit number at the
-				 * end of the buffer. Once we have the size, move back from
-				 * there to get the start of the string data area.
-				 */
-
-                /**
-                 * totalSizeInBits does not include the signature and sizeOfClassDataArea at
-                 * the start of the buffer, so add those.
-                 */
-                int endDataPosition = 24*8 + totalSizeInBits;
-
-                /*
-                 * The last bit indicates if there is a string stream.
-                 * All versions 2007+ have a string stream, and we don't support
-                 * prior versions, so this bit should always be set.
-                 */
-                endDataPosition -= 1;
-                bitClassesStrings.position(endDataPosition);
-                boolean endBit = bitClassesStrings.getB();
-                assert endBit;
-
-                endDataPosition -= 16;
-                bitClassesStrings.position(endDataPosition);
-                int strDataSize = bitClassesStrings.getRS();
-                if ((strDataSize & 0x8000) != 0) {
-                	endDataPosition -= 16;
-                    bitClassesStrings.position(endDataPosition);
-                    int hiSize = bitClassesStrings.getRS();
-                    strDataSize = (strDataSize & 0x7FFF) | (hiSize << 15);
-                }
-
-                bitClassesStrings.setEndOffset(endDataPosition);
-
-                endDataPosition -= strDataSize;
-                bitClassesStrings.position(endDataPosition);
-
-                bitClasses.setEndOffset(endDataPosition);
 
                 // Repeated until we exhaust the data
                 do {

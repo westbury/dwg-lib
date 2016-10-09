@@ -353,6 +353,11 @@ public class BitBuffer
         value.set(getBD());
     }
 
+    public void RC(Value<Integer> value)
+    {
+        value.set(getRC());
+    }
+
     public void expectBD(double expected)
     {
         double actual = getBD();
@@ -427,5 +432,10 @@ public class BitBuffer
 		double x = getRD();
 		double y = getRD();
 		field.set(new Point2D(x, y));
+	}
+
+	public void TU(Value<String> field) {
+		String text = getTU();
+		field.set(text);
 	}
 }
