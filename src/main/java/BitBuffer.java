@@ -438,4 +438,26 @@ public class BitBuffer
 		String text = getTU();
 		field.set(text);
 	}
+
+	/**
+	 * Paragraph 2.12 Object Type
+	 * 
+	 * @return
+	 */
+	public int getOT() {
+        int code = getBitsUnsigned(2);
+        switch (code) {
+        case 0:
+        	return getBitsUnsigned(8);
+        case 1:
+        	return getBitsUnsigned(8) + 0x01F0;
+        case 3:
+        	// TODO issue warning and fall thru to case 2
+        case 2:
+        	return getBitsUnsigned(16);
+       	default:
+       		throw new RuntimeException("cannot happen");
+        }
+	}
+
 }

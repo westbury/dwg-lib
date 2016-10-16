@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
@@ -53,4 +55,38 @@ public class ReaderTest {
 		assertEquals("SCENEOE", reader.classes.get(21).appname);
 		
 	}
+
+	@Test
+	public void testGetMC1() throws Exception {
+		byte[] testArray = new byte[] { (byte)0b10000010, 0b00100100 };
+		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
+		int result = Reader.getMC(testBuffer);
+		assertEquals(4610, result);
+	}
+
+	@Test
+	public void testGetMC2() throws Exception {
+		byte[] testArray = new byte[] { (byte)0b11101001, (byte)0b10010111, (byte)0b11100110, 0b00110101 };
+		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
+		int result = Reader.getMC(testBuffer);
+		assertEquals(112823273, result);
+	}
+
+	@Test
+	public void testGetNegativeMC() throws Exception {
+		byte[] testArray = new byte[] { (byte)0b10000101, 0b01001011 };
+		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
+		int result = Reader.getMC(testBuffer);
+		assertEquals(-1413, result);  
+	}
+
+	@Test
+	public void testGetMS() throws Exception {
+		byte[] testArray = new byte[] { (byte)0b00110001, (byte)0b11110100, (byte)0b10001101, 0b00000000 };
+		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
+		testBuffer.order(ByteOrder.LITTLE_ENDIAN);
+		int result = Reader.getMS(testBuffer);
+		assertEquals(4650033, result);
+	}
+
 }
