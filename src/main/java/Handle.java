@@ -20,4 +20,13 @@ public class Handle
         this.offset = value;
     }
 
+    public Handle(int code, int value)
+    {
+        this.code = code;
+        this.offset = value;
+    }
+
+    public String toString() {
+    	return Integer.toString(code) + ": " + offset;
+    }
 }

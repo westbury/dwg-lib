@@ -583,11 +583,15 @@ public class Header
             handleStream.H(DRAGVS, HandleType.HARD_POINTER);
             bitBuffer.RC(CSHADOW);
             bitBuffer.BD(Unknown10);
-            bitBuffer.BS(UnknownShort1); // unknown short (type 5/6 only) these do not seem to be required,
-            bitBuffer.BS(UnknownShort2); // unknown short (type 5/6 only) even for type 5.
-            bitBuffer.BS(UnknownShort3); // unknown short (type 5/6 only)
-            bitBuffer.BS(UnknownShort4); // unknown short (type 5/6 only)
-            int CRC = bitBuffer.getRS(); //for the data section, starting after the sentinel. Use 0xC0C1 for the initial
+            
+            bitBuffer.assertEndOfStream();
+            
+            // So where are these??????
+//            bitBuffer.BS(UnknownShort1); // unknown short (type 5/6 only) these do not seem to be required,
+//            bitBuffer.BS(UnknownShort2); // unknown short (type 5/6 only) even for type 5.
+//            bitBuffer.BS(UnknownShort3); // unknown short (type 5/6 only)
+//            bitBuffer.BS(UnknownShort4); // unknown short (type 5/6 only)
+//            int CRC = bitBuffer.getRS(); //for the data section, starting after the sentinel. Use 0xC0C1 for the initial
 
     }
 

@@ -82,6 +82,10 @@ public class BitBuffer
      */
     public boolean getB()
     {
+    	if (!hasMoreData()) {
+    		throw new RuntimeException("end of stream reached unexpectedly");
+    	}
+    	
     	int mask = 0x80 >> bitOffset;
         boolean result = ((currentByte & mask) != 0);
         if (bitOffset == 7) {
@@ -290,6 +294,44 @@ public class BitBuffer
         return new Handle(code, handle);
     }
 
+	public Handle getHandle(Handle baseHandle) {
+        int code = getBitsUnsigned(4);
+        int counter = getBitsUnsigned(4);
+
+        int [] handle = new int[counter];
+        for (int i = 0; i < counter; i++) {
+            handle[i] = getBitsUnsigned(8);
+        }
+
+        Handle tempHandle = new Handle(code, handle);
+
+        int thisOffset;
+		switch (tempHandle.code) {
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			thisOffset = tempHandle.offset;
+			break;
+		case 6:
+			thisOffset = baseHandle.offset + 1;
+			break;
+		case 8:
+			thisOffset = baseHandle.offset - 1;
+			break;
+		case 0xA:
+			thisOffset = baseHandle.offset + tempHandle.offset;
+			break;
+		case 0xC:
+			thisOffset = baseHandle.offset - tempHandle.offset;
+			break;
+		default:
+			throw new RuntimeException("bad case");
+		}
+
+        return new Handle(5, thisOffset);
+	}
+
     private int getBitsUnsigned(int numberOfBits)
     {
         assert numberOfBits <= 31;
@@ -458,6 +500,20 @@ public class BitBuffer
        	default:
        		throw new RuntimeException("cannot happen");
         }
+	}
+
+	public void advanceToByteBoundary() {
+		if (bitOffset != 0) {
+            currentByte = byteArray[++currentOffset];
+            bitOffset = 0;
+		}
+	}
+
+	public void assertEndOfStream() {
+		int currentBitOffset = currentOffset*8 + bitOffset;
+		if (currentBitOffset != endOffset) {
+			throw new RuntimeException("not at end of stream");
+		}
 	}
 
 }

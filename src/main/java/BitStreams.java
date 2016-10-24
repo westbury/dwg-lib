@@ -27,9 +27,11 @@ import java.util.Arrays;
 public class BitStreams {
 
 	private byte[] byteArray;
-	private int endDataPosition;
-	private int stringStreamEnd;
+	private int dataStreamStart;
 	private int stringStreamStart;
+	private int stringStreamEnd;
+	private int endDataPosition;
+	private int handleStreamEnd;
 
 	public BitStreams(byte[] byteArray, byte[] signature) {
 		this.byteArray = byteArray;
@@ -49,6 +51,10 @@ public class BitStreams {
 		int unknown75 = byteBuffer.getInt();
 		int totalSizeInBits = byteBuffer.getInt();
 
+
+		dataStreamStart = 28*8;
+		endDataPosition = 24*8 + totalSizeInBits;
+
 		/*
 		 * Find the string section. We do this by reading the buffer
 		 * backwards from the end. The size of the string data area is
@@ -58,37 +64,88 @@ public class BitStreams {
 		 */
 
 		BitBuffer bitBuffer = BitBuffer.wrap(byteArray);
+		identifyStringStream(bitBuffer);
+		
+		handleStreamEnd = byteArray.length * 8;
+	}
 
-		endDataPosition = 24*8 + totalSizeInBits;
+	public BitStreams(byte[] objectBuffer, int byteOffset) {
+		this.byteArray = objectBuffer;
+		
+		ByteBuffer objectsBuffer = ByteBuffer.wrap(objectBuffer);
+		objectsBuffer.order(ByteOrder.LITTLE_ENDIAN);
+		objectsBuffer.position(byteOffset);
 
+		int sizeOfObject = Reader.getMS(objectsBuffer);
+		int bitSizeOfHandleStream = Reader.getUnsignedMC(objectsBuffer);
+
+		dataStreamStart = objectsBuffer.position() * 8;
+
+		int bitSizeOfObjectData = sizeOfObject * 8 - bitSizeOfHandleStream;
+
+		endDataPosition = dataStreamStart + bitSizeOfObjectData;
+
+		handleStreamEnd = endDataPosition + bitSizeOfHandleStream;
+
+
+		/*
+		 * Find the string section. We do this by reading the buffer
+		 * backwards from the end. The size of the string data area is
+		 * stored as either a 15 bit number or a 31 bit number at the
+		 * end of the buffer. Once we have the size, move back from
+		 * there to get the start of the string data area.
+		 */
+
+		BitBuffer bitBuffer = BitBuffer.wrap(byteArray);
+		identifyStringStream(bitBuffer);
+
+
+	}
+
+	/**
+	 * Given the position of the end of the combined data and string streams, being also
+	 * the start of the handle stream, we work backwards to identify the start and end of
+	 * the string stream.
+	 * <P>
+	 * <code>stringStreamStart</code> and <code>stringStreamEnd</code> are set by this method.
+	 *  
+	 * @param bitBuffer
+	 */
+	private void identifyStringStream(BitBuffer bitBuffer) {
 		/*
 		 * The last bit indicates if there is a string stream.
 		 * All versions 2007+ have a string stream, and we don't support
-		 * prior versions, so this bit should always be set.
+		 * prior versions, so this bit should always be set, except in the
+		 * objects in the objects section where it may not be set.
 		 */
 		int position = endDataPosition;
 		position -= 1;
 		bitBuffer.position(position);
 		boolean endBit = bitBuffer.getB();
-		assert endBit;
+		
+		int strDataSize;
+		
+		if (endBit) {
 
 		position -= 16;
 		bitBuffer.position(position);
-		int strDataSize = bitBuffer.getRS();
+		strDataSize = bitBuffer.getRS();
 		if ((strDataSize & 0x8000) != 0) {
 			position -= 16;
 			bitBuffer.position(position);
 			int hiSize = bitBuffer.getRS();
 			strDataSize = (strDataSize & 0x7FFF) | (hiSize << 15);
 		}
-
+		} else {
+			strDataSize = 0;
+		}
 		stringStreamEnd = position;
 		stringStreamStart = position - strDataSize;
 	}
 
 	public BitBuffer getDataStream() {
 		BitBuffer dataStream = BitBuffer.wrap(byteArray);
-		dataStream.position(28*8);
+		dataStream.position(dataStreamStart);
 		dataStream.setEndOffset(stringStreamStart);
 		return dataStream;
 	}
@@ -103,6 +160,7 @@ public class BitStreams {
 	public BitBuffer getHandleStream() {
 		BitBuffer handleStream = BitBuffer.wrap(byteArray);
 		handleStream.position(endDataPosition);
+		handleStream.setEndOffset(handleStreamEnd);
 		return handleStream;
 	}
 
