@@ -516,4 +516,16 @@ public class BitBuffer
 		}
 	}
 
+    public CMC getCMC()
+    {
+        int colorIndex = getBS();
+        if (colorIndex == 0) {
+            int rgbValue = getBL();
+            int colorByte = getRC();
+        } else {
+            // no more fields
+        }
+        return new CMC();
+    }
+
 }

@@ -28,8 +28,10 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 
@@ -178,61 +180,61 @@ public class Reader {
 
 			readSystemSectionPage(buffer, sectionPageMapAddress, sectionMapId);
 
-			Handle h = header.CLAYER.get();
+//			Handle h = header.CLAYER.get();
 			{
 
 
 				// Let's try a few handles and see what we get...
 
-				//			for (Handle h : new Handle [] { 
-				//					header.CLAYER.get(), 
-				//					header.TEXTSTYLE.get(), 
-				//					header.CELTYPE.get(), 
-				//					header.CMATERIAL.get(), 
-				//					header.DIMSTYLE.get(), 
-				//					header.CMLSTYLE.get(), 
-				//					header.DIMTXSTY.get(), 
-				//					header.DIMLDRBLK.get(), 
-				//					header.DIMBLK.get(), 
-				//					header.DIMBLK1.get(), 
-				//					header.DIMBLK2.get(), 
-				//					header.DIMLTYPE.get(), 
-				//					header.DIMLTEX1.get(), 
-				//					header.DIMLTEX2.get(), 
-				//					header.BLOCK_CONTROL_OBJECT.get(), 
-				//					header.LAYER_CONTROL_OBJECT.get(), 
-				//					header.STYLE_CONTROL_OBJECT.get(), 
-				//					header.LINETYPE_CONTROL_OBJECT.get(), 
-				//					header.VIEW_CONTROL_OBJECT.get(), 
-				//					header.UCS_CONTROL_OBJECT.get(), 
-				//					header.VPORT_CONTROL_OBJECT.get(), 
-				//					header.APPID_CONTROL_OBJECT.get(), 
-				//					header.DIMSTYLE_CONTROL_OBJECT.get(), 
-				//					header.DICTIONARY_ACAD_GROUP.get(), 
-				//					header.DICTIONARY_ACAD_MLINESTYLE.get(), 
-				//					header.DICTIONARY_NAMED_OBJECTS.get(), 
-				//					header.DICTIONARY_LAYOUTS.get(), 
-				//					header.DICTIONARY_PLOTSETTINGS.get(), 
-				//					header.DICTIONARY_PLOTSTYLES.get(), 
-				//					header.DICTIONARY_MATERIALS.get(), 
-				//					header.DICTIONARY_COLORS.get(), 
-				//					header.DICTIONARY_VISUALSTYLE.get(), 
-				//					header.UNKNOWN.get(), 
-				//					header.CPSNID.get(), 
-				//					header.BLOCK_RECORD_PAPER_SPACE.get(), 
-				//					header.BLOCK_RECORD_MODEL_SPACE.get(), 
-				//					header.LTYPE_BYLAYER.get(), 
-				//					header.LTYPE_BYBLOCK.get(), 
-				//					header.LTYPE_CONTINUOUS.get(), 
-				//					header.INTERFEREOBJVS.get(), 
-				//					header.INTERFEREVPVS.get(), 
-				//					header.DRAGVS.get()
-				//			} ) {
-				//
-				//				if (h == null) continue;
-
+							for (Handle h : new Handle [] { 
+									header.CLAYER.get(), 
+									header.TEXTSTYLE.get(), 
+									header.CELTYPE.get(), 
+									header.CMATERIAL.get(), 
+									header.DIMSTYLE.get(), 
+									header.CMLSTYLE.get(), 
+									header.DIMTXSTY.get(), 
+									header.DIMLDRBLK.get(), 
+									header.DIMBLK.get(), 
+									header.DIMBLK1.get(), 
+									header.DIMBLK2.get(), 
+									header.DIMLTYPE.get(), 
+									header.DIMLTEX1.get(), 
+									header.DIMLTEX2.get(), 
+									header.BLOCK_CONTROL_OBJECT.get(), 
+									header.LAYER_CONTROL_OBJECT.get(), 
+									header.STYLE_CONTROL_OBJECT.get(), 
+									header.LINETYPE_CONTROL_OBJECT.get(), 
+									header.VIEW_CONTROL_OBJECT.get(), 
+									header.UCS_CONTROL_OBJECT.get(), 
+									header.VPORT_CONTROL_OBJECT.get(), 
+									header.APPID_CONTROL_OBJECT.get(), 
+									header.DIMSTYLE_CONTROL_OBJECT.get(), 
+									header.DICTIONARY_ACAD_GROUP.get(), 
+									header.DICTIONARY_ACAD_MLINESTYLE.get(), 
+									header.DICTIONARY_NAMED_OBJECTS.get(), 
+									header.DICTIONARY_LAYOUTS.get(), 
+									header.DICTIONARY_PLOTSETTINGS.get(), 
+									header.DICTIONARY_PLOTSTYLES.get(), 
+									header.DICTIONARY_MATERIALS.get(), 
+									header.DICTIONARY_COLORS.get(), 
+									header.DICTIONARY_VISUALSTYLE.get(), 
+									header.UNKNOWN.get(), 
+									header.CPSNID.get(), 
+									header.BLOCK_RECORD_PAPER_SPACE.get(), 
+									header.BLOCK_RECORD_MODEL_SPACE.get(), 
+									header.LTYPE_BYLAYER.get(), 
+									header.LTYPE_BYBLOCK.get(), 
+									header.LTYPE_CONTINUOUS.get(), 
+									header.INTERFEREOBJVS.get(), 
+									header.INTERFEREVPVS.get(), 
+									header.DRAGVS.get()
+							} ) {
+				
+								if (h == null) continue;
+								if (h.offset == 0) continue;  // I assume this is what is known as a null handle?
 				parseObject(h);
-
+							}
 			}
 		}
 	}
@@ -246,6 +248,9 @@ public class Reader {
 				break;
 			}
 		}
+		
+		if (offsetIntoObjectMap == null)
+		    System.out.println("");
 		assert offsetIntoObjectMap != null;
 
 		if (doneObjects.contains(offsetIntoObjectMap)) {
@@ -287,10 +292,12 @@ public class Reader {
 		// Page 254 Chapter 27 Extended Entity Data
 
 		int sizeOfExtendedObjectData = dataStream.getBS();
-		if (sizeOfExtendedObjectData != 0) {
-			for (int i=0; i < sizeOfExtendedObjectData; i++) {
+		while (sizeOfExtendedObjectData != 0) {
+		    Handle appHandle = dataStream.getHandle();
+			for (int i = 0; i < sizeOfExtendedObjectData*8; i++) {
 				dataStream.getB();
 			}
+	        sizeOfExtendedObjectData = dataStream.getBS();
 		}
 
 		// 19.4.55
@@ -303,7 +310,51 @@ public class Reader {
 
 		// Page 99 Object data (varies by type of object)
 		
-		if (objectType == 51) {  // LAYER
+        if (objectType == 42) {  // DICTIONARY
+            // 19.4.42 DICTIONARY (42)
+
+            int numItems = dataStream.getBL();
+
+            int cloningFlag = dataStream.getBS();
+            int hardOwnerFlag = dataStream.getRC();
+            
+            Handle parentHandle = handleStream.getHandle(handleOfThisObject);
+
+            List<Handle> reactorHandles = new ArrayList<>();
+            for (int i = 0; i< numReactors; i++) {
+                Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
+                reactorHandles.add(reactorHandle);
+            }
+
+            if (!xDicMissingFlag) {
+                Handle xdicobjhandle = handleStream.getHandle();
+            }
+            
+            Map<String, Handle> dictionaryMap = new HashMap<>();
+            for (int i = 0; i < numItems; i++) {
+                String key = stringStream.getTU();
+                Handle handle = handleStream.getHandle(handleOfThisObject);
+                dictionaryMap.put(key, handle);
+            }
+            
+            handleStream.advanceToByteBoundary();
+
+            dataStream.assertEndOfStream();
+            stringStream.assertEndOfStream();
+            handleStream.assertEndOfStream();
+
+        } else if (objectType == 53) {  // SHAPEFILE or STYLE ??????
+            // 19.4.54 SHAPEFILE (53)
+        
+            
+            
+            String entryName = stringStream.getTU();
+            String fontName = stringStream.getTU();
+            String bigFontName = stringStream.getTU();
+            
+            
+
+        } else if (objectType == 51) {  // LAYER
 			// 19.4.52 LAYER (51)
 		
 			int numEntries = dataStream.getBL();
@@ -374,10 +425,8 @@ public class Reader {
 			}
 			parseObject(bylayerLinetypeHandle);
 			parseObject(byblockLinetypeHandle);
-		}
-
-
-		else if (objectType == 57) { // LTYPE
+			
+		} else if (objectType == 57) { // LTYPE
 			// 19.4.56 LTYPE 57    
 
 			String entryName = stringStream.getTU();
@@ -415,6 +464,82 @@ public class Reader {
 			handleStream.assertEndOfStream();
 			
 			System.out.println("done objects");
+
+		} else if (objectType == 65) { // VPORT
+            // 19.4.62 VPORT 65 page 169    
+
+		    // Similar to LTYPE 57
+		    
+            String entryName = stringStream.getTU();
+            
+            boolean sixtyFourFlag = dataStream.getB();
+//            int xRefOrdinal = dataStream.getBS();
+            boolean xDep = dataStream.getB();
+          double viewHeight = dataStream.getBD();
+          double aspectRatio = dataStream.getBD();
+          double viewCenter1 = dataStream.getRD();
+          double viewCenter2 = dataStream.getRD();
+          double viewTarget1 = dataStream.getBD();
+          double viewTarget2 = dataStream.getBD();
+          double viewTarget3 = dataStream.getBD();
+          double viewDir1 = dataStream.getBD();
+          double viewDir2 = dataStream.getBD();
+          double viewDir3 = dataStream.getBD();
+          double viewTwist = dataStream.getBD();
+          double lensLength = dataStream.getBD();
+          double frontClip = dataStream.getBD();
+          double backClip = dataStream.getBD();
+          boolean viewMode0 = dataStream.getB();
+          boolean viewMode1 = dataStream.getB();
+          boolean viewMode2 = dataStream.getB();
+          boolean viewMode3 = dataStream.getB();
+          int renderMode = dataStream.getRC();
+          boolean useDefaultLights = dataStream.getB();
+          int defaultLightingType = dataStream.getRC();
+          double brightness = dataStream.getBD();
+          double contrast = dataStream.getBD();
+          CMC ambientColor = dataStream.getCMC();
+          double lowerLeft1 = dataStream.getRD(); 
+          double lowerLeft2 = dataStream.getRD(); 
+          double upperRight1 = dataStream.getRD(); 
+          double upperRight2 = dataStream.getRD(); 
+          boolean UCSFOLLOW = dataStream.getB();
+          int circleZoom = dataStream.getBS(); 
+          boolean fastZoom = dataStream.getB();
+          boolean ucsIcon1 = dataStream.getB();
+          boolean ucsIcon2 = dataStream.getB();
+          boolean gridFlag = dataStream.getB();
+          double gridSpacing1 = dataStream.getRD(); 
+          double gridSpacing2 = dataStream.getRD(); 
+          boolean snapFlag = dataStream.getB();
+          boolean snapStyle = dataStream.getB();
+          int snapIsopair = dataStream.getBS(); 
+          double snapRot = dataStream.getBD(); 
+          double snapBase1 = dataStream.getRD(); 
+          double snapBase2 = dataStream.getRD(); 
+          double snapSpacing1 = dataStream.getRD(); 
+          double snapSpacing2 = dataStream.getRD(); 
+          boolean unknown = dataStream.getB();
+          boolean ucsPerViewport = dataStream.getB();
+          double ucsOrigin1 = dataStream.getBD(); 
+          double ucsOrigin2 = dataStream.getBD(); 
+          double ucsOrigin3 = dataStream.getBD(); 
+          double ucsXAxis1 = dataStream.getBD(); 
+          double ucsXAxis2 = dataStream.getBD(); 
+          double ucsXAxis3 = dataStream.getBD(); 
+          double ucsYAxis1 = dataStream.getBD(); 
+          double ucsYAxis2 = dataStream.getBD(); 
+          double ucsYAxis3 = dataStream.getBD(); 
+          double ucsElevation = dataStream.getBD(); 
+          int ucsOrthographicType = dataStream.getBS(); 
+          int gridFlags = dataStream.getBS(); 
+          int gridMajor = dataStream.getBS(); 
+          
+          dataStream.assertEndOfStream();
+          
+          System.out.println("done vport");
+            
+		    
 		} else {
 			List<Handle> lineTypeHandles = new ArrayList<>();
 			try {
