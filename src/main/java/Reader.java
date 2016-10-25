@@ -273,16 +273,56 @@ public class Reader {
 		} else {
 			String name = "<unknown>";
 			switch (objectType) {
+			case 3:
+				name = "ATTDEF"; break;
+			case 4:
+				name = "BLOCK"; break;
+			case 5:
+				name = "ENDBLK"; break;
+			case 38:
+				name = "3DSOLID"; break;
+			case 42:
+				name = "DICTIONARY"; break;
+			case 49:
+				name = "BLOCK HEADER"; break;
+			case 50:
+				name = "LAYER CONTROL OBJ"; break;
 			case 51:
 				name = "LAYER"; break;
+			case 52:
+				name = "STYLE CONTROL OBJ"; break;
 			case 53:
 				name = "STYLE"; break;
+			case 56:
+				name = "LTYPE CONTROL OBJ"; break;
 			case 57:
 				name = "LTYPE"; break;
+			case 60:
+				name = "VIEW CONTROL OBJ"; break;
+			case 61:
+				name = "VIEW"; break;
+			case 62:
+				name = "UCS CONTROL OBJ"; break;
+			case 63:
+				name = "UCS"; break;
+			case 64:
+				name = "VPORT CONTROL OBJ"; break;
+			case 65:
+				name = "VPORT"; break;
+			case 66:
+				name = "APPID CONTROL OBJ"; break;
+			case 67:
+				name = "APPID"; break;
 			case 69:
 				name = "DIMSTYLE"; break;
 			case 73:
 				name = "MLINESTYLE"; break;
+			case 79:
+				name = "XRECORD"; break;
+			case 80:
+				name = "ACDBPLACEHOLDER"; break;
+			case 82:
+				name = "LAYOUT"; break;
 			}
 			System.out.println("Object Type: " + objectType + " = " + name);
 		}
@@ -310,7 +350,18 @@ public class Reader {
 
 		// Page 99 Object data (varies by type of object)
 		
-        if (objectType == 42) {  // DICTIONARY
+        if (objectType == 38) {  // 3DSOLID
+            // 19.4.39 REGION (37), 3DSOLID (38), BODY (39) page 137
+
+        	// TODO need to read as Common Entity Data is described in 19.4.1 page 104
+        	// (Common Entity Format read above)
+        	
+            boolean acisEmptyBit = dataStream.getB();
+            boolean unknownBit = dataStream.getB();
+
+            int version = dataStream.getBS();
+
+        } else if (objectType == 42) {  // DICTIONARY
             // 19.4.42 DICTIONARY (42)
 
             int numItems = dataStream.getBL();
@@ -432,17 +483,27 @@ public class Reader {
 			String entryName = stringStream.getTU();
 			
 			boolean sixtyFourFlag = dataStream.getB();
-			int xRefOrdinal = dataStream.getBS();
-			boolean xDep = dataStream.getB();
-			String description = stringStream.getTU();
+			dataStream.getB();
+			dataStream.getB();
+			dataStream.getB();
+//			int xRefOrdinal = dataStream.getBS();
+//			boolean xDep = dataStream.getB();
+//			String description = stringStream.getTU();
 //			double patternLen = dataStream.getBD();
-//			int alignment = dataStream.getRC();
-			
-			// TODO finish this...
+			int alignment = dataStream.getRC();
+			int numDashes = dataStream.getRC();
 
-			int numDashes = 0;
-			
-//			dataStream.assertEndOfStream();
+			for (int i = 0; i < numDashes; i++) {
+				double dashLength = dataStream.getBD();
+				int complexShapecode = dataStream.getBS();
+				double xOffset  = dataStream.getRD();
+				double yOffset  = dataStream.getRD();
+				double scale  = dataStream.getRD();
+				double rotation  = dataStream.getRD();
+				int shapeFlag = dataStream.getBS();
+			}
+
+			dataStream.assertEndOfStream();
 			
 			// No 512 byte area in sample file
 
