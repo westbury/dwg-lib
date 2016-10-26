@@ -1,3 +1,4 @@
+package bitstreams;
 /*
  * Copyright (c) 2016, 1Spatial Group Ltd.
  *
@@ -76,8 +77,8 @@ public class BitStreams {
 		objectsBuffer.order(ByteOrder.LITTLE_ENDIAN);
 		objectsBuffer.position(byteOffset);
 
-		int sizeOfObject = Reader.getMS(objectsBuffer);
-		int bitSizeOfHandleStream = Reader.getUnsignedMC(objectsBuffer);
+		int sizeOfObject = getMS(objectsBuffer);
+		int bitSizeOfHandleStream = getUnsignedMC(objectsBuffer);
 
 		dataStreamStart = objectsBuffer.position() * 8;
 
@@ -162,6 +163,63 @@ public class BitStreams {
 		handleStream.position(endDataPosition);
 		handleStream.setEndOffset(handleStreamEnd);
 		return handleStream;
+	}
+
+	public static int getMC(ByteBuffer buffer) {
+		int result = 0;
+		int shift = 0;
+
+		byte b = buffer.get();
+		while ((b & 0x80) != 0) {
+			int byteValue = (b & 0x7F);
+			result |= (byteValue << shift);
+			shift += 7;
+			b = buffer.get();
+		}
+
+		boolean signBit = (b & 0x40) != 0;
+		int byteValue = (b & 0x3F);
+		result |= (byteValue << shift);
+
+		if (signBit) {
+			result = -result;
+		}
+
+		return result;
+	}
+
+	public static int getUnsignedMC(ByteBuffer buffer) {
+		int result = 0;
+		int shift = 0;
+
+		boolean highBit;
+		do {
+			byte b = buffer.get();
+			highBit = (b & 0x80) != 0;
+			int byteValue = (b & 0x7F);
+			result |= (byteValue << shift);
+			shift += 7;
+		} while (highBit);
+
+		return result;
+	}
+
+	public static int getMS(ByteBuffer buffer) {
+		int result = 0;
+		int shift = 0;
+
+		assert buffer.order() == ByteOrder.LITTLE_ENDIAN;
+
+		boolean highBit;
+		do {
+			short word = buffer.getShort();
+			highBit = (word & 0x8000) != 0;
+			int wordValue = (word & 0x7FFF);
+			result |= (wordValue << shift);
+			shift += 15;
+		} while (highBit);
+
+		return result;
 	}
 
 }

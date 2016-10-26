@@ -1,3 +1,4 @@
+package dwglib;
 
 public class UnsupportedFileVersionException extends RuntimeException {
 

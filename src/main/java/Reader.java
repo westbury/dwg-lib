@@ -29,10 +29,43 @@ import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import bitstreams.BitBuffer;
+import bitstreams.BitStreams;
+import bitstreams.CMC;
+import bitstreams.Handle;
+import dwglib.FileVersion;
+import objects.AcdbPlaceHolder;
+import objects.Appid;
+import objects.AppidControlObj;
+import objects.Attdef;
+import objects.Block;
+import objects.BlockControlObj;
+import objects.BlockHeader;
+import objects.CadObject;
+import objects.Dictionary;
+import objects.DimStyle;
+import objects.DimstyleControlObj;
+import objects.Endblk;
+import objects.GenericObject;
+import objects.LType;
+import objects.LTypeControlObj;
+import objects.Layer;
+import objects.LayerControlObj;
+import objects.Layout;
+import objects.MLineStyle;
+import objects.Style;
+import objects.StyleControlObj;
+import objects.ThreeDSolid;
+import objects.Ucs;
+import objects.UcsControlObj;
+import objects.VPort;
+import objects.VPortControlObj;
+import objects.View;
+import objects.ViewControlObj;
+import objects.XRecord;
 
 
 /**
@@ -77,7 +110,7 @@ public class Reader {
 	private List<ObjectMapSection> objectMapSections;
 
 
-	private static Set<Long> doneObjects = new HashSet<>();
+	private static Map<Long, CadObject> doneObjects = new HashMap<>();
 
 	public Reader(File inputFile) throws IOException {
 		try(FileInputStream inputStream = new FileInputStream(inputFile)) {
@@ -239,7 +272,7 @@ public class Reader {
 		}
 	}
 
-	private void parseObject(Handle h) {
+	private CadObject parseObject(Handle h) {
 		Long offsetIntoObjectMap = null;
 		for (ObjectMapSection section : this.objectMapSections) {
 			int offset = h.offset;
@@ -253,10 +286,9 @@ public class Reader {
 		    System.out.println("");
 		assert offsetIntoObjectMap != null;
 
-		if (doneObjects.contains(offsetIntoObjectMap)) {
-			return;
+		if (doneObjects.containsKey(offsetIntoObjectMap)) {
+			return doneObjects.get(offsetIntoObjectMap);
 		}
-		doneObjects.add(offsetIntoObjectMap);
 		
 		BitStreams bitStreams = new BitStreams(objectBuffer, offsetIntoObjectMap.intValue());
 		BitBuffer dataStream = bitStreams.getDataStream();
@@ -265,356 +297,148 @@ public class Reader {
 		
 		int objectType = dataStream.getOT();
 
+		CadObject cadObject;
 		
 		if (objectType >= 500) {
 			int classIndex = objectType - 500;
 			ClassData thisClass = classes.get(classIndex);
 			System.out.println("Object Type: " + thisClass.classdxfname);
+			
+			cadObject = new GenericObject();
 		} else {
-			String name = "<unknown>";
 			switch (objectType) {
 			case 3:
-				name = "ATTDEF"; break;
+				cadObject = new Attdef();
+				break;
 			case 4:
-				name = "BLOCK"; break;
+				cadObject = new Block();
+				break;
 			case 5:
-				name = "ENDBLK"; break;
+				cadObject = new Endblk();
+				break;
 			case 38:
-				name = "3DSOLID"; break;
+				cadObject = new ThreeDSolid();
+				break;
 			case 42:
-				name = "DICTIONARY"; break;
+				cadObject = new Dictionary();
+				break;
+			case 48:
+				cadObject = new BlockControlObj();
+				break;
 			case 49:
-				name = "BLOCK HEADER"; break;
+				cadObject = new BlockHeader();
+				break;
 			case 50:
-				name = "LAYER CONTROL OBJ"; break;
+				cadObject = new LayerControlObj();
+				break;
 			case 51:
-				name = "LAYER"; break;
+				cadObject = new Layer();
+				break;
 			case 52:
-				name = "STYLE CONTROL OBJ"; break;
+				cadObject = new StyleControlObj();
+				break;
 			case 53:
-				name = "STYLE"; break;
+				cadObject = new Style();
+				break;
 			case 56:
-				name = "LTYPE CONTROL OBJ"; break;
+				cadObject = new LTypeControlObj();
+				break;
 			case 57:
-				name = "LTYPE"; break;
+				cadObject = new LType();
+				break;
 			case 60:
-				name = "VIEW CONTROL OBJ"; break;
+				cadObject = new ViewControlObj();
+				break;
 			case 61:
-				name = "VIEW"; break;
+				cadObject = new View();
+				break;
 			case 62:
-				name = "UCS CONTROL OBJ"; break;
+				cadObject = new UcsControlObj();
+				break;
 			case 63:
-				name = "UCS"; break;
+				cadObject = new Ucs();
+				break;
 			case 64:
-				name = "VPORT CONTROL OBJ"; break;
+				cadObject = new VPortControlObj();
+				break;
 			case 65:
-				name = "VPORT"; break;
+				cadObject = new VPort();
+				break;
 			case 66:
-				name = "APPID CONTROL OBJ"; break;
+				cadObject = new AppidControlObj();
+				break;
 			case 67:
-				name = "APPID"; break;
+				cadObject = new Appid();
+				break;
+			case 68:
+				cadObject = new DimstyleControlObj();
+				break;
 			case 69:
-				name = "DIMSTYLE"; break;
+				cadObject = new DimStyle();
+				break;
 			case 73:
-				name = "MLINESTYLE"; break;
+				cadObject = new MLineStyle();
+				break;
 			case 79:
-				name = "XRECORD"; break;
+				cadObject = new XRecord();
+				break;
 			case 80:
-				name = "ACDBPLACEHOLDER"; break;
+				cadObject = new AcdbPlaceHolder();
+				break;
 			case 82:
-				name = "LAYOUT"; break;
+				cadObject = new Layout();
+				break;
+			default:
+				cadObject = new GenericObject();
+				break;
 			}
-			System.out.println("Object Type: " + objectType + " = " + name);
+			System.out.println("Object Type: " + objectType + " = " + cadObject);
 		}
 
-		Handle handleOfThisObject = dataStream.getHandle();
-
-		// Page 254 Chapter 27 Extended Entity Data
-
-		int sizeOfExtendedObjectData = dataStream.getBS();
-		while (sizeOfExtendedObjectData != 0) {
-		    Handle appHandle = dataStream.getHandle();
-			for (int i = 0; i < sizeOfExtendedObjectData*8; i++) {
-				dataStream.getB();
-			}
-	        sizeOfExtendedObjectData = dataStream.getBS();
-		}
-
-		// 19.4.55
-		int numReactors = dataStream.getBL();
-
-		boolean xDicMissingFlag = dataStream.getB();
-		if (fileVersion.is2013OrLater()) {
-			boolean hasBinaryData = dataStream.getB();
-		}
+		doneObjects.put(offsetIntoObjectMap, cadObject);
+		
 
 		// Page 99 Object data (varies by type of object)
+
+		cadObject.readFromStreams(dataStream, stringStream, handleStream, fileVersion);
 		
         if (objectType == 38) {  // 3DSOLID
-            // 19.4.39 REGION (37), 3DSOLID (38), BODY (39) page 137
-
-        	// TODO need to read as Common Entity Data is described in 19.4.1 page 104
-        	// (Common Entity Format read above)
-        	
-            boolean acisEmptyBit = dataStream.getB();
-            boolean unknownBit = dataStream.getB();
-
-            int version = dataStream.getBS();
-
         } else if (objectType == 42) {  // DICTIONARY
-            // 19.4.42 DICTIONARY (42)
-
-            int numItems = dataStream.getBL();
-
-            int cloningFlag = dataStream.getBS();
-            int hardOwnerFlag = dataStream.getRC();
-            
-            Handle parentHandle = handleStream.getHandle(handleOfThisObject);
-
-            List<Handle> reactorHandles = new ArrayList<>();
-            for (int i = 0; i< numReactors; i++) {
-                Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-                reactorHandles.add(reactorHandle);
-            }
-
-            if (!xDicMissingFlag) {
-                Handle xdicobjhandle = handleStream.getHandle();
-            }
-            
-            Map<String, Handle> dictionaryMap = new HashMap<>();
-            for (int i = 0; i < numItems; i++) {
-                String key = stringStream.getTU();
-                Handle handle = handleStream.getHandle(handleOfThisObject);
-                dictionaryMap.put(key, handle);
-            }
-            
-            handleStream.advanceToByteBoundary();
-
-            dataStream.assertEndOfStream();
-            stringStream.assertEndOfStream();
-            handleStream.assertEndOfStream();
 
         } else if (objectType == 53) {  // SHAPEFILE or STYLE ??????
-            // 19.4.54 SHAPEFILE (53)
-        
-            
-            
-            String entryName = stringStream.getTU();
-            String fontName = stringStream.getTU();
-            String bigFontName = stringStream.getTU();
             
             
 
         } else if (objectType == 51) {  // LAYER
-			// 19.4.52 LAYER (51)
-		
-			int numEntries = dataStream.getBL();
-
-			// TODO process remaining CRC data in data stream
-//			dataStream.assertEndOfStream();
+        	Layer layer = (Layer)cadObject;
+    		for (Handle reactorHandle : layer.reactorHandles) {
+    			if (reactorHandle.offset == 0) {
+    				System.out.println("Object: null");
+    			} else {
+    				parseObject(reactorHandle);
+    			}
+    		}
+		} else if (objectType == 56) {  // LTYPE CONTROL OBJ
+        	LTypeControlObj ltypeControlObj = (LTypeControlObj)cadObject;
 			
-			
-			Handle layerControlHandle = handleStream.getHandle(handleOfThisObject);
-
-			List<Handle> reactorHandles = new ArrayList<>();
-			for (int i = 0; i< numReactors; i++) {
-				Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-				reactorHandles.add(reactorHandle);
-			}
-
-			if (!xDicMissingFlag) {
-				Handle xdicobjhandle = handleStream.getHandle();
-			}
-
-			Handle externalReferenceBlockHandle = handleStream.getHandle();
-			Handle plotStyleHandle = handleStream.getHandle();
-			Handle lineTypeHandle = handleStream.getHandle(handleOfThisObject);
-			Handle materialHandle = handleStream.getHandle(handleOfThisObject);
-			
-			// We seem to have a handle too many.  TODO: check this out.
-//			Handle nullHandle = handleStream.getHandle();
-
-			handleStream.advanceToByteBoundary();
-			handleStream.assertEndOfStream();
-
-			for (Handle reactorHandle : reactorHandles) {
-				if (reactorHandle.offset == 0) {
-					System.out.println("Object: null");
-				} else {
-					parseObject(reactorHandle);
-				}
-			}
-		} else if (objectType == 56) {
-			// 19.4.55 LINETYPE CONTROL (56)
-			
-			int numEntries = dataStream.getBL();
-
-			dataStream.assertEndOfStream();
-			
-			// Here starts the handle area
-			
-			Handle nullHandle = handleStream.getHandle();
-
-			if (!xDicMissingFlag) {
-				Handle xdicobjhandle = handleStream.getHandle();
-			}
-
-			List<Handle> lineTypeHandles = new ArrayList<>();
-			for (int i =0; i< numEntries; i++){
-				Handle lineTypeHandle = handleStream.getHandle(handleOfThisObject);
-				lineTypeHandles.add(lineTypeHandle);
-			}
-
-			Handle bylayerLinetypeHandle = handleStream.getHandle();
-			Handle byblockLinetypeHandle = handleStream.getHandle();
-			
-			handleStream.advanceToByteBoundary();
-			handleStream.assertEndOfStream();
-			
-			for (Handle lineTypeHandle : lineTypeHandles) {
+			for (Handle lineTypeHandle : ltypeControlObj.lineTypeHandles) {
 				parseObject(lineTypeHandle);
 			}
-			parseObject(bylayerLinetypeHandle);
-			parseObject(byblockLinetypeHandle);
+			parseObject(ltypeControlObj.bylayerLinetypeHandle);
+			parseObject(ltypeControlObj.byblockLinetypeHandle);
 			
 		} else if (objectType == 57) { // LTYPE
-			// 19.4.56 LTYPE 57    
-
-			String entryName = stringStream.getTU();
-			
-			boolean sixtyFourFlag = dataStream.getB();
-			dataStream.getB();
-			dataStream.getB();
-			dataStream.getB();
-//			int xRefOrdinal = dataStream.getBS();
-//			boolean xDep = dataStream.getB();
-//			String description = stringStream.getTU();
-//			double patternLen = dataStream.getBD();
-			int alignment = dataStream.getRC();
-			int numDashes = dataStream.getRC();
-
-			for (int i = 0; i < numDashes; i++) {
-				double dashLength = dataStream.getBD();
-				int complexShapecode = dataStream.getBS();
-				double xOffset  = dataStream.getRD();
-				double yOffset  = dataStream.getRD();
-				double scale  = dataStream.getRD();
-				double rotation  = dataStream.getRD();
-				int shapeFlag = dataStream.getBS();
-			}
-
-			dataStream.assertEndOfStream();
-			
-			// No 512 byte area in sample file
-
-			Handle lypeControlHandle = handleStream.getHandle(handleOfThisObject);
-			for (int i = 0; i < numReactors; i++) {
-				Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-			}
-			if (!xDicMissingFlag) {
-				Handle xdicobjhandle = handleStream.getHandle();
-			}
-			Handle externalReferenceBlockHandle = handleStream.getHandle();
-			
-			for (int i = 0; i < numDashes; i++) {
-				Handle shapefileForDashHandle = handleStream.getHandle();
-				Handle shapefileForShapeHandle = handleStream.getHandle();
-			}
-			
-			handleStream.advanceToByteBoundary();
-			handleStream.assertEndOfStream();
 			
 			System.out.println("done objects");
 
 		} else if (objectType == 65) { // VPORT
-            // 19.4.62 VPORT 65 page 169    
-
-		    // Similar to LTYPE 57
-		    
-            String entryName = stringStream.getTU();
-            
-            boolean sixtyFourFlag = dataStream.getB();
-//            int xRefOrdinal = dataStream.getBS();
-            boolean xDep = dataStream.getB();
-          double viewHeight = dataStream.getBD();
-          double aspectRatio = dataStream.getBD();
-          double viewCenter1 = dataStream.getRD();
-          double viewCenter2 = dataStream.getRD();
-          double viewTarget1 = dataStream.getBD();
-          double viewTarget2 = dataStream.getBD();
-          double viewTarget3 = dataStream.getBD();
-          double viewDir1 = dataStream.getBD();
-          double viewDir2 = dataStream.getBD();
-          double viewDir3 = dataStream.getBD();
-          double viewTwist = dataStream.getBD();
-          double lensLength = dataStream.getBD();
-          double frontClip = dataStream.getBD();
-          double backClip = dataStream.getBD();
-          boolean viewMode0 = dataStream.getB();
-          boolean viewMode1 = dataStream.getB();
-          boolean viewMode2 = dataStream.getB();
-          boolean viewMode3 = dataStream.getB();
-          int renderMode = dataStream.getRC();
-          boolean useDefaultLights = dataStream.getB();
-          int defaultLightingType = dataStream.getRC();
-          double brightness = dataStream.getBD();
-          double contrast = dataStream.getBD();
-          CMC ambientColor = dataStream.getCMC();
-          double lowerLeft1 = dataStream.getRD(); 
-          double lowerLeft2 = dataStream.getRD(); 
-          double upperRight1 = dataStream.getRD(); 
-          double upperRight2 = dataStream.getRD(); 
-          boolean UCSFOLLOW = dataStream.getB();
-          int circleZoom = dataStream.getBS(); 
-          boolean fastZoom = dataStream.getB();
-          boolean ucsIcon1 = dataStream.getB();
-          boolean ucsIcon2 = dataStream.getB();
-          boolean gridFlag = dataStream.getB();
-          double gridSpacing1 = dataStream.getRD(); 
-          double gridSpacing2 = dataStream.getRD(); 
-          boolean snapFlag = dataStream.getB();
-          boolean snapStyle = dataStream.getB();
-          int snapIsopair = dataStream.getBS(); 
-          double snapRot = dataStream.getBD(); 
-          double snapBase1 = dataStream.getRD(); 
-          double snapBase2 = dataStream.getRD(); 
-          double snapSpacing1 = dataStream.getRD(); 
-          double snapSpacing2 = dataStream.getRD(); 
-          boolean unknown = dataStream.getB();
-          boolean ucsPerViewport = dataStream.getB();
-          double ucsOrigin1 = dataStream.getBD(); 
-          double ucsOrigin2 = dataStream.getBD(); 
-          double ucsOrigin3 = dataStream.getBD(); 
-          double ucsXAxis1 = dataStream.getBD(); 
-          double ucsXAxis2 = dataStream.getBD(); 
-          double ucsXAxis3 = dataStream.getBD(); 
-          double ucsYAxis1 = dataStream.getBD(); 
-          double ucsYAxis2 = dataStream.getBD(); 
-          double ucsYAxis3 = dataStream.getBD(); 
-          double ucsElevation = dataStream.getBD(); 
-          int ucsOrthographicType = dataStream.getBS(); 
-          int gridFlags = dataStream.getBS(); 
-          int gridMajor = dataStream.getBS(); 
-          
-          dataStream.assertEndOfStream();
           
           System.out.println("done vport");
             
 		    
 		} else {
-			List<Handle> lineTypeHandles = new ArrayList<>();
-			try {
-			do {
-				Handle referencedHandle = handleStream.getHandle(handleOfThisObject);
-				lineTypeHandles.add(referencedHandle);
-			} while (true);
-			} catch (RuntimeException e) {
-				
-			}
-			handleStream.advanceToByteBoundary();
-			handleStream.assertEndOfStream();
 			
-			for (Handle referencedHandle : lineTypeHandles) {
+			for (Handle referencedHandle : cadObject.genericHandles) {
 				if (referencedHandle.offset == 0) {
 					System.out.println("Object: null");
 				} else {
@@ -623,6 +447,8 @@ public class Reader {
 			}
 			
 		}
+        
+		return cadObject;
 	}
 
 	int crc32Table[] =
@@ -913,8 +739,8 @@ public class Reader {
 					int endPosition = classesBuffer.position() - 2 + sectionSize; // Less length of two-byte CRC at end
 
 					while (classesBuffer.position() != endPosition) {
-						int handleOffset = getMC(classesBuffer);
-						int locationOffset = getMC(classesBuffer);
+						int handleOffset = BitStreams.getMC(classesBuffer);
+						int locationOffset = BitStreams.getMC(classesBuffer);
 						System.out.println("offset " + handleOffset + " = " + locationOffset);
 
 						lastHandle += handleOffset;
@@ -1042,63 +868,6 @@ public class Reader {
 
 		}
 
-	}
-
-	public static int getMC(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
-
-		byte b = buffer.get();
-		while ((b & 0x80) != 0) {
-			int byteValue = (b & 0x7F);
-			result |= (byteValue << shift);
-			shift += 7;
-			b = buffer.get();
-		}
-
-		boolean signBit = (b & 0x40) != 0;
-		int byteValue = (b & 0x3F);
-		result |= (byteValue << shift);
-
-		if (signBit) {
-			result = -result;
-		}
-
-		return result;
-	}
-
-	public static int getUnsignedMC(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
-
-		boolean highBit;
-		do {
-			byte b = buffer.get();
-			highBit = (b & 0x80) != 0;
-			int byteValue = (b & 0x7F);
-			result |= (byteValue << shift);
-			shift += 7;
-		} while (highBit);
-
-		return result;
-	}
-
-	public static int getMS(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
-
-		assert buffer.order() == ByteOrder.LITTLE_ENDIAN;
-
-		boolean highBit;
-		do {
-			short word = buffer.getShort();
-			highBit = (word & 0x8000) != 0;
-			int wordValue = (word & 0x7FFF);
-			result |= (wordValue << shift);
-			shift += 15;
-		} while (highBit);
-
-		return result;
 	}
 
 	private SectionPage readSystemSectionPage(ByteBuffer buffer, int expectedPageType) {

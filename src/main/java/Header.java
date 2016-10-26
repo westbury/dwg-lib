@@ -28,6 +28,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoField;
 import java.time.temporal.JulianFields;
 
+import bitstreams.BitBuffer;
+import bitstreams.BitStreams;
+import bitstreams.CmColor;
+import bitstreams.Handle;
+import bitstreams.HandleType;
+import bitstreams.Value;
+import dwglib.FileVersion;
+
 public class Header
 {
 

@@ -1,3 +1,9 @@
+import bitstreams.BitBuffer;
+import bitstreams.Handle;
+import bitstreams.HandleType;
+import bitstreams.Point2D;
+import bitstreams.Point3D;
+import bitstreams.Value;
 
 public class SpaceHeader {
 

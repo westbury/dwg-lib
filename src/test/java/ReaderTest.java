@@ -12,6 +12,8 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import bitstreams.BitStreams;
+
 public class ReaderTest {
 
 	/**
@@ -60,7 +62,7 @@ public class ReaderTest {
 	public void testGetMC1() throws Exception {
 		byte[] testArray = new byte[] { (byte)0b10000010, 0b00100100 };
 		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
-		int result = Reader.getMC(testBuffer);
+		int result = BitStreams.getMC(testBuffer);
 		assertEquals(4610, result);
 	}
 
@@ -68,7 +70,7 @@ public class ReaderTest {
 	public void testGetMC2() throws Exception {
 		byte[] testArray = new byte[] { (byte)0b11101001, (byte)0b10010111, (byte)0b11100110, 0b00110101 };
 		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
-		int result = Reader.getMC(testBuffer);
+		int result = BitStreams.getMC(testBuffer);
 		assertEquals(112823273, result);
 	}
 
@@ -76,7 +78,7 @@ public class ReaderTest {
 	public void testGetNegativeMC() throws Exception {
 		byte[] testArray = new byte[] { (byte)0b10000101, 0b01001011 };
 		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
-		int result = Reader.getMC(testBuffer);
+		int result = BitStreams.getMC(testBuffer);
 		assertEquals(-1413, result);  
 	}
 
@@ -85,7 +87,7 @@ public class ReaderTest {
 		byte[] testArray = new byte[] { (byte)0b00110001, (byte)0b11110100, (byte)0b10001101, 0b00000000 };
 		ByteBuffer testBuffer = ByteBuffer.wrap(testArray);
 		testBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		int result = Reader.getMS(testBuffer);
+		int result = BitStreams.getMS(testBuffer);
 		assertEquals(4650033, result);
 	}
 

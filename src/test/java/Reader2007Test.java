@@ -10,6 +10,8 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import dwglib.UnsupportedFileVersionException;
+
 public class Reader2007Test {
 
 	/**

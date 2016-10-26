@@ -1,3 +1,4 @@
+package bitstreams;
 
 public enum HandleType {
 

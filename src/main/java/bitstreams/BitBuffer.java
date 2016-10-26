@@ -1,3 +1,4 @@
+package bitstreams;
 /*
  * Copyright (c) 2016, 1Spatial Group Ltd.
  *
