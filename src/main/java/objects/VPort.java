@@ -1,7 +1,7 @@
 package objects;
 
 import bitstreams.BitBuffer;
-import bitstreams.CMC;
+import bitstreams.CmColor;
 
 public class VPort extends NonEntityObject {
 
@@ -38,7 +38,7 @@ public class VPort extends NonEntityObject {
       int defaultLightingType = dataStream.getRC();
       double brightness = dataStream.getBD();
       double contrast = dataStream.getBD();
-      CMC ambientColor = dataStream.getCMC();
+      CmColor ambientColor = dataStream.getCMC();
       double lowerLeft1 = dataStream.getRD(); 
       double lowerLeft2 = dataStream.getRD(); 
       double upperRight1 = dataStream.getRD(); 

@@ -98,6 +98,11 @@ public class BitBuffer
         return result;
     }
 
+    public int getBB()
+    {
+        return getBitsUnsigned(2);
+    }
+    
     /**
      * raw char (not compressed)
      * @return
@@ -517,16 +522,29 @@ public class BitBuffer
 		}
 	}
 
-    public CMC getCMC()
+    public CmColor getCMC()
     {
         int colorIndex = getBS();
         if (colorIndex == 0) {
             int rgbValue = getBL();
             int colorByte = getRC();
+            return new CmColor(rgbValue, colorByte);
         } else {
             // no more fields
+            // TODO complete this...
+            return new CmColor(0, 0);
         }
-        return new CMC();
     }
 
+    public CmColor getENC()
+    {
+        // 2.1.1 page 13
+        int colorIndex = getBS();
+        if ((colorIndex & 0x2000) != 0) {
+            int transparency = getBL();
+        }
+        // no more fields
+        // TODO complete this...
+        return new CmColor(0, 0);
+    }
 }

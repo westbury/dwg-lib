@@ -34,7 +34,6 @@ import java.util.Map;
 
 import bitstreams.BitBuffer;
 import bitstreams.BitStreams;
-import bitstreams.CMC;
 import bitstreams.Handle;
 import dwglib.FileVersion;
 import objects.AcdbPlaceHolder;
