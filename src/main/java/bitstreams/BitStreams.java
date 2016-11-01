@@ -25,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import dwglib.FileVersion;
+
 public class BitStreams {
 
 	private byte[] byteArray;
@@ -34,7 +36,7 @@ public class BitStreams {
 	private int endDataPosition;
 	private int handleStreamEnd;
 
-	public BitStreams(byte[] byteArray, byte[] signature) {
+	public BitStreams(byte[] byteArray, byte[] signature, FileVersion fileVersion) {
 		this.byteArray = byteArray;
 
 		ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
@@ -48,12 +50,14 @@ public class BitStreams {
 		}
 
 		int sizeOfDataArea = byteBuffer.getInt();
-
 		int unknown75 = byteBuffer.getInt();
 		int totalSizeInBits = byteBuffer.getInt();
 
-
-		dataStreamStart = 28*8;
+		// Position in bit buffer at same place as where we got to
+		// in the byte buffer.
+		int position = byteBuffer.position();
+        dataStreamStart = position * 8;
+		
 		endDataPosition = 24*8 + totalSizeInBits;
 
 		/*
@@ -135,7 +139,8 @@ public class BitStreams {
 			position -= 16;
 			bitBuffer.position(position);
 			int hiSize = bitBuffer.getRS();
-			strDataSize = (strDataSize & 0x7FFF) | (hiSize << 15);
+			int loSize = -strDataSize;
+			strDataSize = (hiSize << 15) | loSize;
 		}
 		} else {
 			strDataSize = 0;

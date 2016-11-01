@@ -44,6 +44,6 @@ public abstract class EntityObject extends CadObject {
         int isInvisible = dataStream.getBS();
         int entityLineweightFlag = dataStream.getRC();
 
-        readObjectTypeSpecificData(dataStream, stringStream, handleStream);
+        readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
     }    
 }

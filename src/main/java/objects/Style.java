@@ -1,10 +1,12 @@
 package objects;
 
 import bitstreams.BitBuffer;
+import dwglib.FileVersion;
 
 public class Style extends NonEntityObject {
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    @Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.54 SHAPEFILE (53)
         
         

@@ -2,10 +2,12 @@ package objects;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import dwglib.FileVersion;
 
 public class LType extends NonEntityObject {
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    @Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 		// 19.4.56 LTYPE 57    
 
 		String entryName = stringStream.getTU();

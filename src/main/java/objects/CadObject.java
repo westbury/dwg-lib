@@ -32,9 +32,9 @@ public abstract class CadObject {
         readPostCommonFields(dataStream, stringStream, handleStream, fileVersion);
     }
 
-    abstract public void readPostCommonFields(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion);
+    abstract protected void readPostCommonFields(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion);
 
-    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    protected void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // For the time being, provide this default implementation that
         // just reads all the handles.
         // Ultimately this should be an abstract method.

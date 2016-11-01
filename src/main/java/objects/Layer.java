@@ -5,12 +5,14 @@ import java.util.List;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import dwglib.FileVersion;
 
 public class Layer extends NonEntityObject {
 
 	public List<Handle> reactorHandles = new ArrayList<>();
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+	@Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 		// 19.4.52 LAYER (51)
 		
 		int numEntries = dataStream.getBL();
@@ -35,9 +37,11 @@ public class Layer extends NonEntityObject {
 		Handle lineTypeHandle = handleStream.getHandle(handleOfThisObject);
 		Handle materialHandle = handleStream.getHandle(handleOfThisObject);
 		
-		// We seem to have a handle too many.  TODO: check this out.
-//		Handle nullHandle = handleStream.getHandle();
-
+		// It appears that, contrary to the specification, this handle is not present in 2010 (R24).
+		if (fileVersion.is2013OrLater()) {
+		    Handle nullHandle = handleStream.getHandle();
+		}
+		
 		handleStream.advanceToByteBoundary();
 		handleStream.assertEndOfStream();
 	}

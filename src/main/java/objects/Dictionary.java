@@ -7,10 +7,12 @@ import java.util.Map;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import dwglib.FileVersion;
 
 public class Dictionary extends NonEntityObject {
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    @Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.42 DICTIONARY (42)
 
         int numItems = dataStream.getBL();

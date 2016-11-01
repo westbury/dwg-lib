@@ -14,7 +14,7 @@ public abstract class NonEntityObject extends CadObject {
             boolean hasBinaryData = dataStream.getB();
         }
 
-        this.readObjectTypeSpecificData(dataStream, stringStream, handleStream);
+        this.readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
     }
 
 }

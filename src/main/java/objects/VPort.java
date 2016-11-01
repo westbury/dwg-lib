@@ -2,10 +2,12 @@ package objects;
 
 import bitstreams.BitBuffer;
 import bitstreams.CmColor;
+import dwglib.FileVersion;
 
 public class VPort extends NonEntityObject {
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    @Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.62 VPORT 65 page 169    
 
 	    // Similar to LTYPE 57

@@ -282,7 +282,7 @@ public class Reader {
 		}
 		
 		if (offsetIntoObjectMap == null)
-		    System.out.println("");
+		    return new GenericObject();
 		assert offsetIntoObjectMap != null;
 
 		if (doneObjects.containsKey(offsetIntoObjectMap)) {
@@ -689,7 +689,7 @@ public class Reader {
 				// The signature
 				byte[] headerSignature = new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F };
 
-				BitStreams bitStreams = new BitStreams(expandedData, headerSignature);
+				BitStreams bitStreams = new BitStreams(expandedData, headerSignature, fileVersion);
 				double x = 1.0;
 				long xx = Double.doubleToLongBits(x);
 				for (int k=0; k < 8 ; k++) {
@@ -757,89 +757,25 @@ public class Reader {
 
 				System.out.println("Sections in handle map read");
 			} else if (sectionName.equals("AcDb:AcDbObjects")) {
-				List<byte[]> objectBuffers = new ArrayList<>();
-				int totalSize = 0;
+				byte[] combinedBuffer = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 
-				for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-					int pageNumber = sectionPageBuffer.getInt();
-					int dataSize = sectionPageBuffer.getInt();
-					long startOffset = sectionPageBuffer.getLong();
-
-					Section classesData = null;
-					for (Section eachSection : sections) {
-						if (eachSection.sectionPageNumber == pageNumber) {
-							classesData = eachSection;
-							break;
-						}
-					}
-
-					buffer.position(classesData.address+32);
-
-					byte [] compressedData = new byte[dataSize];
-					buffer.get(compressedData);
-
-					byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
-
-					objectBuffers.add(expandedData);
-
-					totalSize += expandedData.length;
-				}
-
-				objectBuffer = new byte[totalSize];
-				int offset = 0;
-				for (byte[] objectBufferPart : objectBuffers) {
-					for (byte b : objectBufferPart) {
-						objectBuffer[offset++] = b;
-					}
-				}
-
-				System.out.println("end of objects");
+				objectBuffer = combinedBuffer;
 
 			} else if (sectionName.equals("AcDb:Classes")) {
-				int pageNumber = sectionPageBuffer.getInt();
-				int dataSize = sectionPageBuffer.getInt();
-				long startOffset = sectionPageBuffer.getLong();
-
-				Section classesData = null;
-				for (Section eachSection : sections) {
-					if (eachSection.sectionPageNumber == pageNumber) {
-						classesData = eachSection;
-						break;
-					}
-				}
-
-				buffer.position(classesData.address);
-
-				int secMask = 0x4164536b ^ classesData.address;
-
-				int typeA = buffer.getInt();
-				int typeB = typeA ^ secMask;
-				int sectionPageType = typeA ^ classesData.address;
-				int sectionNumber = buffer.getInt() ^ secMask;
-				int dataSize2 = buffer.getInt() ^ secMask;  // dataSize
-				int pageSize = buffer.getInt() ^ secMask;  // class section sectionSize
-				int startOffset2 = buffer.getInt() ^ secMask;
-				int pageHeaderChecksum = buffer.getInt() ^ secMask;
-				int dataChecksum = buffer.getInt() ^ secMask;
-				int unknown = buffer.getInt() ^ secMask;
-
-				byte [] compressedData = new byte[dataSize2];
-				buffer.get(compressedData);
-
-				byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+                byte[] combinedBuffer = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 
 				// 5.8 AcDb:Classes Section
 
 				byte[] classesSignature = new byte [] { (byte)0x8D, (byte)0xA1, (byte)0xC4, (byte)0xB8, (byte)0xC4, (byte)0xA9, (byte)0xF8, (byte)0xC5, (byte)0xC0, (byte)0xDC, (byte)0xF4, (byte)0x5F, (byte)0xE7, (byte)0xCF, (byte)0xB6, (byte)0x8A};
 
-				BitStreams bitStreams = new BitStreams(expandedData, classesSignature);
+				BitStreams bitStreams = new BitStreams(combinedBuffer, classesSignature, fileVersion);
 
 				BitBuffer bitClasses = bitStreams.getDataStream();
 				BitBuffer bitClassesStrings = bitStreams.getStringStream();
 
 				int maximumClassNumber = bitClasses.getBL();
 				boolean unknownBool = bitClasses.getB();
-
+				
 				// Here starts the class data (repeating)
 
 				// Repeated until we exhaust the data
@@ -868,6 +804,46 @@ public class Reader {
 		}
 
 	}
+
+    private byte[] combinePages(ByteBuffer buffer, ByteBuffer sectionPageBuffer, int pageCount, int maxDecompressedSize)
+    {
+        List<byte[]> objectBuffers = new ArrayList<>();
+        int totalSize = 0;
+
+        for (int pageIndex = 0; pageIndex < pageCount; pageIndex++) {
+        	int pageNumber = sectionPageBuffer.getInt();
+        	int dataSize = sectionPageBuffer.getInt();
+        	long startOffset = sectionPageBuffer.getLong();
+
+        	Section classesData = null;
+        	for (Section eachSection : sections) {
+        		if (eachSection.sectionPageNumber == pageNumber) {
+        			classesData = eachSection;
+        			break;
+        		}
+        	}
+
+        	buffer.position(classesData.address+32);
+
+        	byte [] compressedData = new byte[dataSize];
+        	buffer.get(compressedData);
+
+        	byte [] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+
+        	objectBuffers.add(expandedData);
+
+        	totalSize += expandedData.length;
+        }
+
+        byte[] combinedBuffer = new byte[totalSize];
+        int offset = 0;
+        for (byte[] objectBufferPart : objectBuffers) {
+        	for (byte b : objectBufferPart) {
+        	    combinedBuffer[offset++] = b;
+        	}
+        }
+        return combinedBuffer;
+    }
 
 	private SectionPage readSystemSectionPage(ByteBuffer buffer, int expectedPageType) {
 		int pageType = buffer.getInt();

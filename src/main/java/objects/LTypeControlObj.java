@@ -5,6 +5,7 @@ import java.util.List;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import dwglib.FileVersion;
 
 public class LTypeControlObj extends NonEntityObject {
 
@@ -12,7 +13,8 @@ public class LTypeControlObj extends NonEntityObject {
 	public Handle bylayerLinetypeHandle;
 	public Handle byblockLinetypeHandle;
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+	@Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 		// 19.4.55 LINETYPE CONTROL (56)
 		
 		int numEntries = dataStream.getBL();

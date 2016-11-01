@@ -21,12 +21,7 @@
  */
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoField;
-import java.time.temporal.JulianFields;
 
 import bitstreams.BitBuffer;
 import bitstreams.BitStreams;
@@ -305,14 +300,12 @@ public class Header
         if (version.is2013OrLater()) {
             // Read-only
             long REQUIREDVERSIONS = bitBuffer.getBLL();
+            
+            // It seems we need to read two more bits to get to the BD 412148564080.0 value.  
+            // Is this because 3B is incorrectly understood?
+            bitBuffer.getB();
+            bitBuffer.getB();
         }
-
-
-        
-        // This is where the 412148564080.0 bits were actually found in a bit
-        // scan.  This does not appear to agree with the specification so further
-        // work is no doubt 
-        bitBuffer.position(224);
 
         bitBuffer.expectBD(412148564080.0);
         bitBuffer.expectBD(1.0);
