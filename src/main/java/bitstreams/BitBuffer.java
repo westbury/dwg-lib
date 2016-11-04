@@ -547,4 +547,52 @@ public class BitBuffer
         // TODO complete this...
         return new CmColor(0, 0);
     }
+
+    public double getDD(double defaultValue)
+    {
+        int code = getBitsUnsigned(2);
+        switch (code) {
+        case 0:
+            return defaultValue;
+        case 1:
+        {
+            long b = Double.doubleToLongBits(defaultValue);
+            
+            long byte1 = getBitsUnsigned(8);
+            long byte2 = getBitsUnsigned(8);
+            long byte3 = getBitsUnsigned(8);
+            long byte4 = getBitsUnsigned(8);
+            
+            return Double.longBitsToDouble((byte4 << 24)
+                    | (byte3 << 16)
+                    | (byte2 << 8)
+                    | (byte1 << 0)
+                    | (b & 0xFFFFFFFF00000000L));
+        }
+        case 2:
+        {
+            long b = Double.doubleToLongBits(defaultValue);
+        
+            long byte1 = getBitsUnsigned(8);
+            long byte2 = getBitsUnsigned(8);
+            long byte3 = getBitsUnsigned(8);
+            long byte4 = getBitsUnsigned(8);
+            long byte5 = getBitsUnsigned(8);
+            long byte6 = getBitsUnsigned(8);
+            
+            return Double.longBitsToDouble((byte2 << 40)
+                    | (byte1 << 32)
+                    | (byte6 << 24)
+                    | (byte5 << 16)
+                    | (byte4 << 8)
+                    | (byte3 << 0)
+                    | (b & 0xFFFF000000000000L));
+        }
+        case 3:
+            return getRD();
+        default:
+            throw new RuntimeException("cannot happen");
+        }
+    }
+
 }

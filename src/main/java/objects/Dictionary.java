@@ -11,6 +11,8 @@ import dwglib.FileVersion;
 
 public class Dictionary extends NonEntityObject {
 
+    public Map<String, Handle> dictionaryMap;
+
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.42 DICTIONARY (42)
@@ -32,7 +34,7 @@ public class Dictionary extends NonEntityObject {
             Handle xdicobjhandle = handleStream.getHandle();
         }
         
-        Map<String, Handle> dictionaryMap = new HashMap<>();
+        dictionaryMap = new HashMap<>();
         for (int i = 0; i < numItems; i++) {
             String key = stringStream.getTU();
             Handle handle = handleStream.getHandle(handleOfThisObject);
