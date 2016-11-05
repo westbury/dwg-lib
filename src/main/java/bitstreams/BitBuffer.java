@@ -36,8 +36,7 @@ import java.time.temporal.JulianFields;
  * @author Nigel Westbury
  *
  */
-public class BitBuffer
-{
+public class BitBuffer {
     private byte[] byteArray;
 
     private int currentOffset;
@@ -48,8 +47,7 @@ public class BitBuffer
 
 	private int endOffset;
 
-    private BitBuffer(byte[] byteArray)
-    {
+    private BitBuffer(byte[] byteArray) {
         this.byteArray = byteArray;
         currentOffset = 0;
         currentByte = byteArray[0];
@@ -59,16 +57,18 @@ public class BitBuffer
         this.endOffset = byteArray.length * 8;
     }
 
-    public static BitBuffer wrap(byte[] byteArray)
-    {
+    public static BitBuffer wrap(byte[] byteArray) {
         return new BitBuffer(byteArray);
     }
 
-    public void position(int offset)
-    {
+    public void position(int offset) {
         this.currentOffset = offset / 8;
         currentByte = byteArray[currentOffset];
         this.bitOffset = (offset % 8);
+    }
+
+    public int position() {
+        return currentOffset * 8 + bitOffset;
     }
 
     // TODO remove this method and set in constructor
@@ -81,8 +81,7 @@ public class BitBuffer
      *
      * @return
      */
-    public boolean getB()
-    {
+    public boolean getB() {
     	if (!hasMoreData()) {
     		throw new RuntimeException("end of stream reached unexpectedly");
     	}
@@ -98,8 +97,7 @@ public class BitBuffer
         return result;
     }
 
-    public int getBB()
-    {
+    public int getBB() {
         return getBitsUnsigned(2);
     }
     
@@ -107,8 +105,7 @@ public class BitBuffer
      * raw char (not compressed)
      * @return
      */
-    public int getRC()
-    {
+    public int getRC() {
         boolean isNegative = getB();
         int value = getBitsUnsigned(7);
 
@@ -119,8 +116,7 @@ public class BitBuffer
      * raw short (not compressed)
      * @return
      */
-    public int getRS()
-    {
+    public int getRS() {
         int a = getBitsUnsigned(8);
         boolean isNegative = getB();
         int b = getBitsUnsigned(7);
@@ -133,8 +129,7 @@ public class BitBuffer
      * raw long (not compressed)
      * @return
      */
-    public int getRL()
-    {
+    public int getRL() {
         int a = getBitsUnsigned(8);
         int b = getBitsUnsigned(8);
         int c = getBitsUnsigned(8);
@@ -151,8 +146,7 @@ public class BitBuffer
      *
      * @return
      */
-    public int getBS()
-    {
+    public int getBS() {
         int code = getBitsUnsigned(2);
         switch (code) {
         case 0:
@@ -174,8 +168,7 @@ public class BitBuffer
      *
      * @return
      */
-    public int getBL()
-    {
+    public int getBL() {
         int code = getBitsUnsigned(2);
         switch (code) {
         case 0:
@@ -197,8 +190,7 @@ public class BitBuffer
      *
      * @return
      */
-    public long getBLL()
-    {
+    public long getBLL() {
         int length = get3B();
 
         long result = 0;
@@ -217,8 +209,7 @@ public class BitBuffer
      *
      * @return
      */
-    public double getBD()
-    {
+    public double getBD() {
         int code = getBitsUnsigned(2);
         switch (code) {
         case 0:
@@ -238,8 +229,7 @@ public class BitBuffer
      * raw double (not compressed)
      * @return
      */
-    public double getRD()
-    {
+    public double getRD() {
         long byte0 = getBitsUnsigned(8);
         long byte1 = getBitsUnsigned(8);
         long byte2 = getBitsUnsigned(8);
@@ -264,8 +254,7 @@ public class BitBuffer
      *
      * @return
      */
-    public int get3B()
-    {
+    public int get3B() {
         if (getB()) {
             if (getB()) {
                 if (getB()) {
@@ -287,8 +276,7 @@ public class BitBuffer
      *
      * @return
      */
-    public Handle getHandle()
-    {
+    public Handle getHandle() {
         int code = getBitsUnsigned(4);
         int counter = getBitsUnsigned(4);
 
@@ -338,8 +326,7 @@ public class BitBuffer
         return new Handle(5, thisOffset);
 	}
 
-    private int getBitsUnsigned(int numberOfBits)
-    {
+    private int getBitsUnsigned(int numberOfBits) {
         assert numberOfBits <= 31;
         int result = 0;
         for (int i = 0; i < numberOfBits; i++) {
@@ -356,8 +343,7 @@ public class BitBuffer
      *
      * @return
      */
-    public String getTU()
-    {
+    public String getTU() {
         int length = getBS();
 
         byte[] x = new byte[length*2];
@@ -365,49 +351,40 @@ public class BitBuffer
             x[2*i+1] = (byte)this.getBitsUnsigned(8);
             x[2*i] = (byte)this.getBitsUnsigned(8);
         }
-        try
-        {
+        try {
             return new String(x, "UTF-16");
-        } catch (UnsupportedEncodingException e)
-        {
+        } catch (UnsupportedEncodingException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
             return "";
         }  // TODO
     }
 
-    public boolean hasMoreData()
-    {
+    public boolean hasMoreData() {
         return currentOffset*8 + bitOffset < endOffset;
     }
 
-    public void B(Value<Boolean> value)
-    {
+    public void B(Value<Boolean> value) {
         value.set(getB());
     }
 
-    public void BS(Value<Integer> value)
-    {
+    public void BS(Value<Integer> value) {
         value.set(getBS());
     }
 
-    public void BL(Value<Integer> value)
-    {
+    public void BL(Value<Integer> value) {
         value.set(getBL());
     }
 
-    public void BD(Value<Double> value)
-    {
+    public void BD(Value<Double> value) {
         value.set(getBD());
     }
 
-    public void RC(Value<Integer> value)
-    {
+    public void RC(Value<Integer> value) {
         value.set(getRC());
     }
 
-    public void expectBD(double expected)
-    {
+    public void expectBD(double expected) {
         double actual = getBD();
         if (actual != expected) {
             throw new RuntimeException();
@@ -593,6 +570,14 @@ public class BitBuffer
         default:
             throw new RuntimeException("cannot happen");
         }
+    }
+
+    public int[] getBytes(int length) {
+        int [] result = new int[length]; 
+        for (int i = 0; i < length; i++) {
+            result[i] = this.getBitsUnsigned(8);
+        }
+        return result;
     }
 
 }

@@ -37,6 +37,7 @@ import java.util.Set;
 import bitstreams.BitBuffer;
 import bitstreams.BitStreams;
 import bitstreams.Handle;
+import bitstreams.Point3D;
 import dwglib.FileVersion;
 import objects.AcdbPlaceHolder;
 import objects.Appid;
@@ -416,6 +417,21 @@ public class Reader {
 
 	private void printObject(CadObject cadObject, String indent)
 	{
+        // Trace out the Extended Entity Data
+	    for (Handle appHandle : cadObject.extendedEntityData.keySet()) {
+	        Object [] data = cadObject.extendedEntityData.get(appHandle);
+
+	        Appid app = (Appid)parseObject(appHandle);
+
+	        StringBuffer trace = new StringBuffer();
+	        appendTrace(trace, data);
+
+	        System.out.println("     EED data for " + app.entryName + " = " + trace.toString());
+	    }
+
+
+	    
+	    
 		switch (cadObject.getClass().getSimpleName()) {
 		//        case 38:  // 3DSOLID
 		//        case 42:  // DICTIONARY
@@ -485,6 +501,47 @@ public class Reader {
 			}
 		}
 	}
+
+    private void appendTrace(StringBuffer trace, Object[] components) {
+        String separator = "";
+        for (Object component : components) {
+            trace.append(separator);
+            if (component instanceof String) {
+                trace.append('"').append(component).append('"');
+
+            } else if (component instanceof Object[]) {
+                trace.append('{');
+                appendTrace(trace, (Object[])component);
+                trace.append('}');
+
+            } else if (component instanceof Handle) {
+                trace.append("handle:" + ((Handle)component).offset);
+
+            } else if (component instanceof byte[]) {
+                trace.append('(');
+                for (byte b : (byte[])component) {
+                    trace.append(b).append(' ');
+                }
+                trace.append(')');
+
+            } else if (component instanceof Point3D) {
+                trace.append(component.toString());
+
+            } else if (component instanceof Double) {
+                trace.append(component);
+
+            } else if (component instanceof Short) {
+                trace.append(component);
+
+            } else if (component instanceof Long) {
+                trace.append(component);
+
+            } else { 
+                throw new RuntimeException("Unexpected case");
+            }
+            separator = ",";
+        }
+    }
 
 	private void parseAndPrint(String handleName, Handle referencedHandle, String indent)
 	{

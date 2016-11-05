@@ -1,19 +1,31 @@
 package objects;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Stack;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import bitstreams.Point3D;
 import dwglib.FileVersion;
 
 public abstract class CadObject {
 
     protected Handle handleOfThisObject;
+
     protected int numReactors;
+
     protected boolean xDicMissingFlag;
 
     public List<Handle> genericHandles = new ArrayList<>();
+
+    public Map<Handle, Object[]> extendedEntityData = new HashMap<>();
+
+    // Defined in this class but always set in derived classes
+    public Handle xdicobjhandle;
 
     public void readFromStreams(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         handleOfThisObject = dataStream.getHandle();
@@ -23,9 +35,119 @@ public abstract class CadObject {
         int sizeOfExtendedObjectData = dataStream.getBS();
         while (sizeOfExtendedObjectData != 0) {
             Handle appHandle = dataStream.getHandle();
-            for (int i = 0; i < sizeOfExtendedObjectData*8; i++) {
-                dataStream.getB();
+
+            List<Object> components = new ArrayList<>();
+            Stack<List<Object>> componentStack = new Stack<>();
+
+            int expected = dataStream.position() + sizeOfExtendedObjectData*8;
+
+            while (dataStream.position() < expected) {
+                int dxfGroupCode = dataStream.getRC();
+
+                switch (dxfGroupCode){
+                case 0:
+                {
+                    int length = dataStream.getRC();
+                    byte[] x = new byte[length*2];
+                    for (int i = 0; i < length*2; i++) {
+                        x[i] = (byte)dataStream.getRC();
+                    }
+                    try {
+                        String text = new String(x, "UTF-16");
+                        components.add(text);
+                    } catch (UnsupportedEncodingException e) {
+                        throw new RuntimeException("Should not happen");
+                    }
+
+                    int unknown = dataStream.getRC();
+
+                    break;
+                }
+
+                case 2:
+                {
+                    int x = dataStream.getRC();
+                    switch (x) {
+                    case 0:
+                        componentStack.push(components);
+                        components = new ArrayList<>();
+                        break;
+                    case 1:
+                        List<Object> justCompletedList = components;
+                        components = componentStack.pop();
+                        components.add(justCompletedList.toArray());
+                        break;
+                    }
+                }
+                break;
+
+                case 3:
+                case 5:
+                {
+                    int [] handleBytes = dataStream.getBytes(8);
+                    Handle handle = new Handle(5, handleBytes);
+                    // TODO distinguish between 3 and 5, otherwise
+                    // the information is lost.
+                    components.add(handle);
+                }   
+                break;
+
+                case 4:
+                {
+                    int length = dataStream.getRC();
+                    byte[] x = new byte[length];
+                    for (int i = 0; i < length; i++) {
+                        x[i] = (byte)dataStream.getRC();
+                    }
+                    components.add(x);    
+                }
+                break;
+
+                case 10:
+                case 11:
+                case 12:
+                case 13:
+                {
+                    double x = dataStream.getRD();
+                    double y = dataStream.getRD();
+                    double z = dataStream.getRD();
+                    Point3D point = new Point3D(x, y, z);
+                    components.add(point);
+                }
+                break;
+
+                case 40:
+                case 41:
+                case 42:
+                {
+                    double x = dataStream.getRD();
+                    components.add(x);
+                }
+                break;
+
+                case 70:
+                {
+                    int x = dataStream.getRS();
+                    components.add(Short.valueOf((short)x));
+                }
+                break;
+
+                case 71:
+                {
+                    int x = dataStream.getRL();
+                    components.add(Long.valueOf((long)x));
+                }
+                break;
+
+                default:
+                    throw new RuntimeException("Unexpected case");
+                }
             }
+
+            assert dataStream.position() == expected;
+
+            extendedEntityData.put(appHandle, components.toArray());
+
             sizeOfExtendedObjectData = dataStream.getBS();
         }
 
