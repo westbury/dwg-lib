@@ -2,6 +2,7 @@ package objects;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
+import bitstreams.Point3D;
 import dwglib.FileVersion;
 
 public class Line extends EntityObject {
@@ -26,25 +27,8 @@ public class Line extends EntityObject {
             double endZ = dataStream.getDD(startZ);
         }
 
-        double thickness;
-        boolean thicknessBit = dataStream.getB();
-        if (thicknessBit) {
-            thickness = 0.0;
-        } else {
-            thickness = dataStream.getBD();
-        }
-
-        double extrusion1, extrusion2,extrusion3;
-        boolean extrusionBit = dataStream.getB();
-        if (extrusionBit) {
-            extrusion1 = 0.0;
-            extrusion2 = 0.0;
-            extrusion3 = 1.0;
-        } else {
-            extrusion1 = dataStream.getBD();
-            extrusion2 = dataStream.getBD();
-            extrusion3 = dataStream.getBD();
-        }
+        double thickness = dataStream.getBT();
+        Point3D extrusion = dataStream.getBE();
 
         // Read all handles (until we figure out what they are)
 

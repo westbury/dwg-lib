@@ -43,6 +43,7 @@ import objects.AcdbPlaceHolder;
 import objects.Appid;
 import objects.AppidControlObj;
 import objects.Attdef;
+import objects.Attrib;
 import objects.Block;
 import objects.BlockControlObj;
 import objects.BlockHeader;
@@ -309,9 +310,12 @@ public class Reader {
 			cadObject = new GenericObject(thisClass.classdxfname);
 		} else {
 			switch (objectType) {
-			case 3:
-				cadObject = new Attdef();
+			case 2:
+				cadObject = new Attrib();
 				break;
+            case 3:
+                cadObject = new Attdef();
+                break;
 			case 4:
 				cadObject = new Block();
 				break;

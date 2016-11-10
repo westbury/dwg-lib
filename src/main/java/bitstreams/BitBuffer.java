@@ -112,6 +112,10 @@ public class BitBuffer {
         return isNegative ? -value : value;
     }
 
+    public int getUnsignedRC() {
+        return getBitsUnsigned(8);
+    }
+
     /**
      * raw short (not compressed)
      * @return
@@ -223,6 +227,25 @@ public class BitBuffer {
         default:
             throw new RuntimeException("can't happen");
         }
+    }
+
+    public Point2D get2RD() {
+        double x = getRD();
+        double y = getRD();
+        return new Point2D(x, y);
+    }
+
+    public Point2D get2DD(Point2D base) {
+        double x = getDD(base.x);
+        double y = getDD(base.y);
+        return new Point2D(x, y);
+    }
+
+    public Point3D get3BD() {
+        double x = getBD();
+        double y = getBD();
+        double z = getBD();
+        return new Point3D(x, y, z);
     }
 
     /**
@@ -578,6 +601,24 @@ public class BitBuffer {
             result[i] = this.getBitsUnsigned(8);
         }
         return result;
+    }
+
+    public Point3D getBE() {
+        boolean extrusionBit = getB();
+        if (extrusionBit) {
+            return new Point3D(0.0, 0.0, 1.0);
+        } else {
+            return get3BD();
+        }
+    }
+
+    public double getBT() {
+        boolean thicknessBit = getB();
+        if (thicknessBit) {
+            return 0.0;
+        } else {
+            return getBD();
+        }
     }
 
 }

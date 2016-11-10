@@ -6,7 +6,7 @@ import bitstreams.Point2D;
 import bitstreams.Point3D;
 import dwglib.FileVersion;
 
-public class Attdef extends EntityObject {
+public class Attrib extends EntityObject {
 
     public double elevation;
 
@@ -26,7 +26,7 @@ public class Attdef extends EntityObject {
 
     public double widthFactor;
 
-    public String defaultValue;
+    public String value;
 
     public int generation;
 
@@ -44,13 +44,11 @@ public class Attdef extends EntityObject {
 
     public int version;
 
-    private String prompt;
-
     public Handle styleHandle;
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.5 ATTDEF (3) page 108
+        // 19.4.4 ATTRIB (2) page 107
 
         int dataFlags = dataStream.getUnsignedRC();
         if ((dataFlags & 0x01) == 0) {
@@ -70,11 +68,11 @@ public class Attdef extends EntityObject {
         }
         height = dataStream.getRD();
         if ((dataFlags & 0x10) == 0) {
-            widthFactor = dataStream.getRD();
+        widthFactor = dataStream.getRD();
         }
-        defaultValue = stringStream.getTU();
+        value = stringStream.getTU();
         if ((dataFlags & 0x20) == 0) {
-            generation = dataStream.getBS();
+        generation = dataStream.getBS();
         }
         if ((dataFlags & 0x40) == 0) {
             horizontalAlignment = dataStream.getBS();
@@ -82,16 +80,12 @@ public class Attdef extends EntityObject {
         if ((dataFlags & 0x80) == 0) {
             verticalAlignment = dataStream.getBS();
         }
+        version = dataStream.getRC();
         tag = stringStream.getTU();
         fieldLength = dataStream.getBS();
         flags = dataStream.getRC();
         lockPosition = dataStream.getB();
-        
-        // Version appears to be missing.
-        // Version makes sense for ATTRIB but not ATTDEF anyway.
-//        version = dataStream.getRC();
-        
-        prompt = stringStream.getTU();
+
         styleHandle = handleStream.getHandle(handleOfThisObject);
         
         handleStream.advanceToByteBoundary();
@@ -102,6 +96,6 @@ public class Attdef extends EntityObject {
     }
 
 	public String toString() {
-		return "ATTDEF";
+		return "ATTRIB";
 	}
 }

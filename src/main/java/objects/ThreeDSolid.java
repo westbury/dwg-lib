@@ -3,10 +3,54 @@ package objects;
 import java.io.UnsupportedEncodingException;
 
 import bitstreams.BitBuffer;
+import bitstreams.Handle;
+import bitstreams.Point3D;
+import dwglib.FileVersion;
+import objects.ThreeDSolid.Wire;
 
 public class ThreeDSolid extends EntityObject {
 
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
+    public static class Wire {
+
+        private int wireType;
+        private int wireSelectionMarker;
+        private int wireColor;
+        private int wireAcisIndex;
+        private Point3D[] points;
+
+        public void readFromStream(BitBuffer dataStream) {
+            wireType = dataStream.getRC();
+            wireSelectionMarker = dataStream.getBL();
+            wireColor = dataStream.getBS();
+            wireAcisIndex = dataStream.getBL();
+            int wireNumberOfPoints = dataStream.getBL();
+            points = new Point3D[wireNumberOfPoints];
+            for (int j = 0; j < wireNumberOfPoints; j++) {
+                points[j] = dataStream.get3BD();
+            }
+            boolean transformPresent = dataStream.getB();
+            if (transformPresent) {
+                Point3D xAxis = dataStream.get3BD();
+                Point3D yAxis = dataStream.get3BD();
+                Point3D zAxis = dataStream.get3BD();
+                Point3D translation = dataStream.get3BD();
+                double scale = dataStream.getBD();
+                boolean hasRotation = dataStream.getB();
+                boolean hasReflection = dataStream.getB();
+                boolean hasShear = dataStream.getB();
+            }
+        }
+
+    }
+
+    public Point3D point;
+
+    public Handle historyId;
+
+    public Wire [] wires;
+
+    @Override
+	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.39 REGION (37), 3DSOLID (38), BODY (39) page 137
 
         // TODO need to read as Common Entity Data is described in 19.4.1 page 104
@@ -94,44 +138,16 @@ public class ThreeDSolid extends EntityObject {
         if (wireframeDataPresent) {
             boolean pointPresent = dataStream.getB();
             if (pointPresent) {
-                double point1 = dataStream.getBD();
-                double point2 = dataStream.getBD();
-                double point3 = dataStream.getBD();
+                point = dataStream.get3BD();
             }
             int numIsoLines = dataStream.getBL();
             boolean isoPresent = dataStream.getB();
             int numWires = dataStream.getBL();
 
+            wires = new Wire[numWires];
             for (int i = 0; i < numWires; i++) {
-                int wireType = dataStream.getRC();
-                int wireSelectionMarker = dataStream.getBL();
-                int wireColor = dataStream.getBS();
-                int wireAcisIndex = dataStream.getBL();
-                int wireNumberOfPoints = dataStream.getBL();
-                for (int j = 0; j < wireNumberOfPoints; j++) {
-                    double point1 = dataStream.getBD();
-                    double point2 = dataStream.getBD();
-                    double point3 = dataStream.getBD();
-                }
-                boolean transformPresent = dataStream.getB();
-                if (transformPresent) {
-                    double xAxis1 = dataStream.getBD();
-                    double xAxis2 = dataStream.getBD();
-                    double xAxis3 = dataStream.getBD();
-                    double yAxis1 = dataStream.getBD();
-                    double yAxis2 = dataStream.getBD();
-                    double yAxis3 = dataStream.getBD();
-                    double zAxis1 = dataStream.getBD();
-                    double zAxis2 = dataStream.getBD();
-                    double zAxis3 = dataStream.getBD();
-                    double translation1 = dataStream.getBD();
-                    double translation2 = dataStream.getBD();
-                    double translation3 = dataStream.getBD();
-                    double scale = dataStream.getBD();
-                    boolean hasRotation = dataStream.getB();
-                    boolean hasReflection = dataStream.getB();
-                    boolean hasShear = dataStream.getB();
-                }
+                wires[i] = new Wire();
+                wires[i].readFromStream(dataStream);
             }
 
             int numberOfSilhouettes = dataStream.getBL();
@@ -153,7 +169,13 @@ public class ThreeDSolid extends EntityObject {
             int unknown = dataStream.getBL();
         }
         
+        historyId = handleStream.getHandle();
+        
+        handleStream.advanceToByteBoundary();
+        
         dataStream.assertEndOfStream();
+        stringStream.assertEndOfStream();
+        handleStream.assertEndOfStream();
 	}
 
 	public String toString() {
