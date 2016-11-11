@@ -56,7 +56,7 @@ public abstract class EntityObject extends CadObject {
 
         // 19.4.2 Common Entity Handle Data page 105
 
-        if (this instanceof Attrib || this instanceof Attdef) { // not here????
+        if (this instanceof Attrib || this instanceof Attdef || this instanceof Point) { // not here????
             parentHandle = handleStream.getHandle(handleOfThisObject);
         }
         

@@ -45,7 +45,7 @@ public class BitBuffer {
 
     private int currentByte;
 
-	private int endOffset;
+    private int endOffset;
 
     private BitBuffer(byte[] byteArray) {
         this.byteArray = byteArray;
@@ -73,7 +73,7 @@ public class BitBuffer {
 
     // TODO remove this method and set in constructor
     public void setEndOffset(int endOffset) {
-    	this.endOffset = endOffset;
+        this.endOffset = endOffset;
     }
 
     /**
@@ -82,11 +82,11 @@ public class BitBuffer {
      * @return
      */
     public boolean getB() {
-    	if (!hasMoreData()) {
-    		throw new RuntimeException("end of stream reached unexpectedly");
-    	}
-    	
-    	int mask = 0x80 >> bitOffset;
+        if (!hasMoreData()) {
+            throw new RuntimeException("end of stream reached unexpectedly");
+        }
+
+        int mask = 0x80 >> bitOffset;
         boolean result = ((currentByte & mask) != 0);
         if (bitOffset == 7) {
             currentByte = byteArray[++currentOffset];
@@ -100,7 +100,7 @@ public class BitBuffer {
     public int getBB() {
         return getBitsUnsigned(2);
     }
-    
+
     /**
      * raw char (not compressed)
      * @return
@@ -311,7 +311,7 @@ public class BitBuffer {
         return new Handle(code, handle);
     }
 
-	public Handle getHandle(Handle baseHandle) {
+    public Handle getHandle(Handle baseHandle) {
         int code = getBitsUnsigned(4);
         int counter = getBitsUnsigned(4);
 
@@ -323,33 +323,34 @@ public class BitBuffer {
         Handle tempHandle = new Handle(code, handle);
 
         int thisOffset;
-		switch (tempHandle.code) {
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			thisOffset = tempHandle.offset;
-			break;
-		case 6:
-			thisOffset = baseHandle.offset + 1;
-			break;
-		case 8:
-			thisOffset = baseHandle.offset - 1;
-			break;
-		case 0xA:
-			thisOffset = baseHandle.offset + tempHandle.offset;
-			break;
-		case 0xC:
-			thisOffset = baseHandle.offset - tempHandle.offset;
-			break;
-		default:
-			throw new RuntimeException("bad case");
-		}
+        switch (tempHandle.code) {
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+            thisOffset = tempHandle.offset;
+            break;
+        case 6:
+            thisOffset = baseHandle.offset + 1;
+            break;
+        case 8:
+            thisOffset = baseHandle.offset - 1;
+            break;
+        case 0xA:
+            thisOffset = baseHandle.offset + tempHandle.offset;
+            break;
+        case 0xC:
+            thisOffset = baseHandle.offset - tempHandle.offset;
+            break;
+        default:
+            throw new RuntimeException("bad case");
+        }
 
         return new Handle(5, thisOffset);
-	}
+    }
 
-    private int getBitsUnsigned(int numberOfBits) {
+    // Public for instrumentation only
+    public int getBitsUnsigned(int numberOfBits) {
         assert numberOfBits <= 31;
         int result = 0;
         for (int i = 0; i < numberOfBits; i++) {
@@ -407,6 +408,14 @@ public class BitBuffer {
         value.set(getRC());
     }
 
+    public void expectB(boolean expected)
+    {
+        boolean actual = getB();
+        if (actual != expected) {
+            throw new RuntimeException("unknown bit value: investigation needed.");
+        }
+    }
+
     public void expectBD(double expected) {
         double actual = getBD();
         if (actual != expected) {
@@ -414,113 +423,115 @@ public class BitBuffer {
         }
     }
 
-	public void localDateTime(Value<LocalDateTime> localDateTime) {
-		int julianDay = getBL();
-		int millisecondsIntoDay = getBL();
+    public void localDateTime(Value<LocalDateTime> localDateTime) {
+        int julianDay = getBL();
+        int millisecondsIntoDay = getBL();
 
-		LocalDate datePart = LocalDate.MIN.with(JulianFields.JULIAN_DAY, julianDay);
-		LocalTime timePart = LocalTime.ofNanoOfDay(1000000L * millisecondsIntoDay);
-		LocalDateTime value = LocalDateTime.of(datePart,timePart);
+        LocalDate datePart = LocalDate.MIN.with(JulianFields.JULIAN_DAY, julianDay);
+        LocalTime timePart = LocalTime.ofNanoOfDay(1000000L * millisecondsIntoDay);
+        LocalDateTime value = LocalDateTime.of(datePart,timePart);
 
-		localDateTime.set(value);
+        localDateTime.set(value);
 
-		// This code writes back....
-//		LocalDate dd = value.toLocalDate();
-//		LocalTime tttt = value.toLocalTime();
-//		long jj = dd.getLong(JulianFields.JULIAN_DAY);
-//		
-//		int mss = tttt.get(ChronoField.MILLI_OF_DAY);
-		
-	}
+        // This code writes back....
+        //		LocalDate dd = value.toLocalDate();
+        //		LocalTime tttt = value.toLocalTime();
+        //		long jj = dd.getLong(JulianFields.JULIAN_DAY);
+        //		
+        //		int mss = tttt.get(ChronoField.MILLI_OF_DAY);
 
-	public void duration(Value<Duration> duration) {
-		int days = getBL();
-		int millisecondsIntoDay = getBL();
+    }
 
-		Duration wholeDaysPart = Duration.ofDays(days);
-		Duration partOfDayPart = Duration.ofMillis(millisecondsIntoDay);
-		Duration value = wholeDaysPart.plus(partOfDayPart);
-		
-		duration.set(value);
-	}
+    public void duration(Value<Duration> duration) {
+        int days = getBL();
+        int millisecondsIntoDay = getBL();
 
-	public void CMC(Value<CmColor> color) {
-		int expectZero = getBS();
-		int rgbValue = getBL();
-		int colorByte = getRC();
-		if ((colorByte & 0x01) != 0) {
-			// Read color name
-		}
-		if ((colorByte & 0x02) != 0) {
-			// Read book name
-		}
-		
-		color.set(new CmColor(rgbValue, colorByte));
-	}
+        Duration wholeDaysPart = Duration.ofDays(days);
+        Duration partOfDayPart = Duration.ofMillis(millisecondsIntoDay);
+        Duration value = wholeDaysPart.plus(partOfDayPart);
 
-	public void H(Value<Handle> value) {
-		Handle handle = getHandle();
-		value.set(handle);
-	}
+        duration.set(value);
+    }
 
-	public void H(Value<Handle> value, HandleType type) {
-		Handle handle = getHandle();
-		value.set(handle);
-	}
+    public void CMC(Value<CmColor> color) {
+        int expectZero = getBS();
+        int rgbValue = getBL();
+        int colorByte = getRC();
+        if ((colorByte & 0x01) != 0) {
+            // Read color name
+        }
+        if ((colorByte & 0x02) != 0) {
+            // Read book name
+        }
 
-	public void threeBD(Value<Point3D> field) {
-		double x = getBD();
-		double y = getBD();
-		double z = getBD();
-		field.set(new Point3D(x, y, z));
-	}
+        color.set(new CmColor(rgbValue, colorByte));
+    }
 
-	// Two raw doubles
-	public void twoRD(Value<Point2D> field) {
-		double x = getRD();
-		double y = getRD();
-		field.set(new Point2D(x, y));
-	}
+    public void H(Value<Handle> value) {
+        Handle handle = getHandle();
+        value.set(handle);
+    }
 
-	public void TU(Value<String> field) {
-		String text = getTU();
-		field.set(text);
-	}
+    public void H(Value<Handle> value, HandleType type) {
+        Handle handle = getHandle();
+        value.set(handle);
+    }
 
-	/**
-	 * Paragraph 2.12 Object Type
-	 * 
-	 * @return
-	 */
-	public int getOT() {
+    public void threeBD(Value<Point3D> field) {
+        double x = getBD();
+        double y = getBD();
+        double z = getBD();
+        field.set(new Point3D(x, y, z));
+    }
+
+    // Two raw doubles
+    public void twoRD(Value<Point2D> field) {
+        double x = getRD();
+        double y = getRD();
+        field.set(new Point2D(x, y));
+    }
+
+    public void TU(Value<String> field) {
+        String text = getTU();
+        field.set(text);
+    }
+
+    /**
+     * Paragraph 2.12 Object Type
+     * 
+     * @return
+     */
+    public int getOT() {
         int code = getBitsUnsigned(2);
         switch (code) {
         case 0:
-        	return getBitsUnsigned(8);
+            return getBitsUnsigned(8);
         case 1:
-        	return getBitsUnsigned(8) + 0x01F0;
+            return getBitsUnsigned(8) + 0x01F0;
         case 3:
-        	// TODO issue warning and fall thru to case 2
+            // TODO issue warning and fall thru to case 2
         case 2:
-        	return getBitsUnsigned(16);
-       	default:
-       		throw new RuntimeException("cannot happen");
+            int loByte = getBitsUnsigned(8);
+            int hiByte = getBitsUnsigned(8);
+            return hiByte << 8 | loByte;
+        default:
+            throw new RuntimeException("cannot happen");
         }
-	}
+    }
 
-	public void advanceToByteBoundary() {
-		if (bitOffset != 0) {
+    public void advanceToByteBoundary() {
+        if (bitOffset != 0) {
             currentByte = byteArray[++currentOffset];
             bitOffset = 0;
-		}
-	}
+        }
+    }
 
-	public void assertEndOfStream() {
-		int currentBitOffset = currentOffset*8 + bitOffset;
-		if (currentBitOffset != endOffset) {
-			throw new RuntimeException("not at end of stream");
-		}
-	}
+    public void assertEndOfStream() {
+        int currentBitOffset = currentOffset*8 + bitOffset;
+        if (currentBitOffset != endOffset) {
+            throw new RuntimeException("not at end of stream");
+        }
+    }
 
     public CmColor getCMC()
     {
@@ -557,12 +568,12 @@ public class BitBuffer {
         case 1:
         {
             long b = Double.doubleToLongBits(defaultValue);
-            
+
             long byte1 = getBitsUnsigned(8);
             long byte2 = getBitsUnsigned(8);
             long byte3 = getBitsUnsigned(8);
             long byte4 = getBitsUnsigned(8);
-            
+
             return Double.longBitsToDouble((byte4 << 24)
                     | (byte3 << 16)
                     | (byte2 << 8)
@@ -572,14 +583,14 @@ public class BitBuffer {
         case 2:
         {
             long b = Double.doubleToLongBits(defaultValue);
-        
+
             long byte1 = getBitsUnsigned(8);
             long byte2 = getBitsUnsigned(8);
             long byte3 = getBitsUnsigned(8);
             long byte4 = getBitsUnsigned(8);
             long byte5 = getBitsUnsigned(8);
             long byte6 = getBitsUnsigned(8);
-            
+
             return Double.longBitsToDouble((byte2 << 40)
                     | (byte1 << 32)
                     | (byte6 << 24)

@@ -61,6 +61,7 @@ import objects.Layout;
 import objects.Line;
 import objects.LwPolyline;
 import objects.MLineStyle;
+import objects.Point;
 import objects.Style;
 import objects.StyleControlObj;
 import objects.ThreeDSolid;
@@ -325,6 +326,9 @@ public class Reader {
 			case 19:
 				cadObject = new Line();
 				break;
+            case 27:
+                cadObject = new Point();
+                break;
 			case 38:
 				cadObject = new ThreeDSolid();
 				break;

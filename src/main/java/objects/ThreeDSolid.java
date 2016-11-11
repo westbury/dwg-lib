@@ -1,22 +1,24 @@
 package objects;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
 import bitstreams.Point3D;
 import dwglib.FileVersion;
-import objects.ThreeDSolid.Wire;
 
 public class ThreeDSolid extends EntityObject {
 
     public static class Wire {
 
-        private int wireType;
-        private int wireSelectionMarker;
-        private int wireColor;
-        private int wireAcisIndex;
-        private Point3D[] points;
+        public int wireType;
+        public int wireSelectionMarker;
+        public int wireColor;
+        public int wireAcisIndex;
+        public Point3D[] points;
 
         public void readFromStream(BitBuffer dataStream) {
             wireType = dataStream.getRC();
@@ -124,6 +126,9 @@ public class ThreeDSolid extends EntityObject {
                     }
                 } while (true);    
 
+                // We should return a ByteBuffer for the binary data.
+//                ByteBuffer.wrap(bigArray, offset, length).slice()
+                
             } else {
                 System.out.println("is text");
                 
@@ -182,4 +187,25 @@ public class ThreeDSolid extends EntityObject {
 		return "3DSOLID";
 	}
 
+	private class ByteBufferAsInputStream extends InputStream {
+
+	    private ByteBuffer byteBuffer;
+
+	    ByteBufferAsInputStream(ByteBuffer byteBuffer) {
+	        this.byteBuffer = byteBuffer;
+	    }
+
+	    public int read() throws IOException {
+	        if (!byteBuffer.hasRemaining()) {
+	            return -1;
+	        }
+	        return byteBuffer.get();
+	    }
+
+	    public int read(byte[] bytes, int offset, int length) throws IOException {
+	        length = Math.min(byteBuffer.remaining(), length);
+	        byteBuffer.get(bytes, offset, length);
+	        return length;
+	    }
+	}
 }
