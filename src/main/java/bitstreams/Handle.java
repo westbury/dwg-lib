@@ -28,6 +28,6 @@ public class Handle
     }
 
     public String toString() {
-    	return Integer.toString(code) + ": " + offset;
+    	return Integer.toString(code) + ": " + offset + "(" + Integer.toHexString(offset) + ")";
     }
 }
