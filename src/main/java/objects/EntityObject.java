@@ -30,7 +30,33 @@ public abstract class EntityObject extends CadObject {
             }
         }
 
+        // entMode is documented only for R13-R14 on page 101.  However its meaning
+        // appears to be unchanged in 2010+.
         int entMode = dataStream.getBB();
+        
+        // Generally, entMode indicates whether or not the owner relative handle reference is present.
+        boolean hasOwnerHandleReference;
+        switch (entMode) {
+        case 0: 
+            // The owner relative handle reference is present.
+            // Applies to the following:
+            // VERTEX, ATTRIB, and SEQEND.
+            // BLOCK, ENDBLK, and the defining entities in all
+            // block defs except *MODEL_SPACE and *PAPER_SPACE.
+            hasOwnerHandleReference = true;
+            break;
+        case 1: 
+            // PSPACE entity without a owner relative handle ref.
+            hasOwnerHandleReference = false;
+            break;
+        case 2: 
+            // MSPACE entity without a owner relative handle ref.
+            hasOwnerHandleReference = false;
+            break;
+        default:
+            throw new RuntimeException("unexpected value for 'entMode': 3");
+        }
+        
         numReactors = dataStream.getBS();
         
         // It appears that the xDicMissingFlag is not included.  As it has been known before for fields in the spec to actually not be there,
@@ -56,7 +82,7 @@ public abstract class EntityObject extends CadObject {
 
         // 19.4.2 Common Entity Handle Data page 105
 
-        if (this instanceof Attrib || this instanceof Attdef || this instanceof Point) { // not here????
+        if (hasOwnerHandleReference) {
             parentHandle = handleStream.getHandle(handleOfThisObject);
         }
         

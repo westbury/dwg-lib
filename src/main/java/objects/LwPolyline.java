@@ -41,7 +41,6 @@ public class LwPolyline extends EntityObject {
             dataStream.expectB(false);
             dataStream.expectB(false);
 
-            assert bit0;
             assert !bit1;
             assert !bit2;
 
@@ -170,7 +169,7 @@ public class LwPolyline extends EntityObject {
 
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
-        //        handleStream.assertEndOfStream();
+        handleStream.assertEndOfStream();
     }
 
     public String toString() {

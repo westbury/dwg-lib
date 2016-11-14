@@ -33,7 +33,7 @@ public class LType extends NonEntityObject {
 			int shapeFlag = dataStream.getBS();
 		}
 
-		dataStream.assertEndOfStream();
+//		dataStream.assertEndOfStream();
 		
 		// No 512 byte area in sample file
 
@@ -52,7 +52,7 @@ public class LType extends NonEntityObject {
 		}
 		
 		handleStream.advanceToByteBoundary();
-		handleStream.assertEndOfStream();
+//		handleStream.assertEndOfStream();
 	}
 
 	public String toString() {
