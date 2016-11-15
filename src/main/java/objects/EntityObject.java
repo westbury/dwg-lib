@@ -57,7 +57,7 @@ public abstract class EntityObject extends CadObject {
             throw new RuntimeException("unexpected value for 'entMode': 3");
         }
         
-        numReactors = dataStream.getBS();
+        int numReactors = dataStream.getBS();
         
         // It appears that the xDicMissingFlag is not included.  As it has been known before for fields in the spec to actually not be there,
         // a process of skipping the reading of each field in turn was tried.  Perhaps the xdic is never there for entities.  
@@ -86,7 +86,7 @@ public abstract class EntityObject extends CadObject {
             parentHandle = handleStream.getHandle(handleOfThisObject);
         }
         
-        List<Handle> reactorHandles = new ArrayList<>();
+        reactorHandles = new ArrayList<>();
         for (int i = 0; i< numReactors; i++) {
             Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
             reactorHandles.add(reactorHandle);

@@ -4,13 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import bitstreams.BitBuffer;
+import bitstreams.CmColor;
 import bitstreams.Handle;
 import dwglib.FileVersion;
 
+/**
+ * Parent is LAYER OBJ CONTROL
+ * 
+ * @author Nigel Westbury
+ *
+ */
 public class Layer extends NonEntityObject {
 
-    public Handle layerControlHandle;
-    public List<Handle> reactorHandles = new ArrayList<>();
     public Handle externalReferenceBlockHandle;
     public Handle plotStyleHandle;
     public Handle lineTypeHandle;
@@ -18,28 +23,27 @@ public class Layer extends NonEntityObject {
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.52 LAYER (51)
+        // 19.4.52 LAYER (51) page 158
 
-        int numEntries = dataStream.getBL();
-
-        // TODO process remaining CRC data in data stream
-//		dataStream.assertEndOfStream();
-
-        layerControlHandle = handleStream.getHandle(handleOfThisObject);
-
-        for (int i = 0; i< numReactors; i++) {
-            Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-            reactorHandles.add(reactorHandle);
-        }
-
-        if (!xDicMissingFlag) {
-            Handle xdicobjhandle = handleStream.getHandle();
-        }
-
+        String entryName = stringStream.getTU();
+        boolean sixtyFourFlag = dataStream.getB();
+        /*
+         * At this point we always seem to be three bits prior to a word
+         * that best matches the expected flags.  We get there reliably if
+         * we don't read the xrefindex value.  TODO investigate this as this
+         * code may not be correct.
+         */
+//        int xrefordinal = dataStream.getBS();
+        boolean xdep = dataStream.getB();
+        int flags = dataStream.getBS();
+        CmColor color = dataStream.getCMC();
+        
+        // The handles
+        
         externalReferenceBlockHandle = handleStream.getHandle();
         plotStyleHandle = handleStream.getHandle();
-        lineTypeHandle = handleStream.getHandle(handleOfThisObject);
         materialHandle = handleStream.getHandle(handleOfThisObject);
+        lineTypeHandle = handleStream.getHandle(handleOfThisObject);
 
         // It appears that, contrary to the specification, this handle is not present in 2010 (R24).
         if (fileVersion.is2013OrLater()) {
@@ -47,6 +51,9 @@ public class Layer extends NonEntityObject {
         }
 
         handleStream.advanceToByteBoundary();
+
+        dataStream.assertEndOfStream();
+        stringStream.assertEndOfStream();
         handleStream.assertEndOfStream();
     }
 

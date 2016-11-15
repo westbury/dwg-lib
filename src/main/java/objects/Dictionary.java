@@ -21,18 +21,8 @@ public class Dictionary extends NonEntityObject {
 
         int cloningFlag = dataStream.getBS();
         int hardOwnerFlag = dataStream.getRC();
-        
-        Handle parentHandle = handleStream.getHandle(handleOfThisObject);
-
-        List<Handle> reactorHandles = new ArrayList<>();
-        for (int i = 0; i< numReactors; i++) {
-            Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-            reactorHandles.add(reactorHandle);
-        }
-
-        if (!xDicMissingFlag) {
-            Handle xdicobjhandle = handleStream.getHandle();
-        }
+    
+        // The handles
         
         dictionaryMap = new HashMap<>();
         for (int i = 0; i < numItems; i++) {

@@ -16,9 +16,7 @@ public abstract class CadObject {
 
     protected Handle handleOfThisObject;
 
-    protected int numReactors;
-
-    protected boolean xDicMissingFlag;
+    public List<Handle> reactorHandles;
 
     public List<Handle> genericHandles = new ArrayList<>();
 

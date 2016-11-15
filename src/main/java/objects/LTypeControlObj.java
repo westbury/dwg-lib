@@ -7,6 +7,12 @@ import bitstreams.BitBuffer;
 import bitstreams.Handle;
 import dwglib.FileVersion;
 
+/**
+ * Parent is a null handle.
+ * 
+ * @author Nigel Westbury
+ *
+ */
 public class LTypeControlObj extends NonEntityObject {
 
 	public List<Handle> lineTypeHandles = new ArrayList<>();
@@ -23,12 +29,6 @@ public class LTypeControlObj extends NonEntityObject {
 		
 		// Here starts the handle area
 		
-		Handle nullHandle = handleStream.getHandle();
-
-		if (!xDicMissingFlag) {
-			Handle xdicobjhandle = handleStream.getHandle();
-		}
-
 		for (int i =0; i< numEntries; i++){
 			Handle lineTypeHandle = handleStream.getHandle(handleOfThisObject);
 			lineTypeHandles.add(lineTypeHandle);

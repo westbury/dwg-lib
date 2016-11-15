@@ -4,6 +4,12 @@ import bitstreams.BitBuffer;
 import bitstreams.Handle;
 import dwglib.FileVersion;
 
+/**
+ * Parent is LTYPE OBJ CONTROL.
+ * 
+ * @author Nigel Westbury
+ *
+ */
 public class LType extends NonEntityObject {
 
     @Override
@@ -37,13 +43,8 @@ public class LType extends NonEntityObject {
 		
 		// No 512 byte area in sample file
 
-		Handle lypeControlHandle = handleStream.getHandle(handleOfThisObject);
-		for (int i = 0; i < numReactors; i++) {
-			Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-		}
-		if (!xDicMissingFlag) {
-			Handle xdicobjhandle = handleStream.getHandle();
-		}
+		// The handles.
+		
 		Handle externalReferenceBlockHandle = handleStream.getHandle();
 		
 		for (int i = 0; i < numDashes; i++) {

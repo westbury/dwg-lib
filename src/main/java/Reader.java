@@ -53,6 +53,7 @@ import objects.DimStyle;
 import objects.DimstyleControlObj;
 import objects.Endblk;
 import objects.GenericObject;
+import objects.Insert;
 import objects.LType;
 import objects.LTypeControlObj;
 import objects.Layer;
@@ -71,6 +72,7 @@ import objects.VPort;
 import objects.VPortControlObj;
 import objects.View;
 import objects.ViewControlObj;
+import objects.ViewPort;
 import objects.XRecord;
 
 
@@ -323,11 +325,17 @@ public class Reader {
 			case 5:
 				cadObject = new Endblk();
 				break;
+            case 7:
+                cadObject = new Insert();
+                break;
 			case 19:
 				cadObject = new Line();
 				break;
             case 27:
                 cadObject = new Point();
+                break;
+            case 34:
+                cadObject = new ViewPort();
                 break;
 			case 38:
 				cadObject = new ThreeDSolid();
@@ -466,7 +474,7 @@ public class Reader {
 		{
 			Layer layer = (Layer)cadObject;
 
-			parseAndPrint("Layer Control", layer.layerControlHandle, indent);
+			parseAndPrint("Layer Control", layer.parentHandle, indent);
 			parseAndPrint("External Ref Block", layer.externalReferenceBlockHandle, indent);
 			parseAndPrint("Plot Style", layer.plotStyleHandle, indent);
 			parseAndPrint("Line Type", layer.lineTypeHandle, indent);

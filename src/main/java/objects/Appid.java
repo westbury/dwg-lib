@@ -13,8 +13,6 @@ public class Appid extends NonEntityObject {
 
     public String entryName;
 
-    public Handle theAppControl;
-
     public Handle externalRefBlockHandle;
 
     @Override
@@ -29,18 +27,6 @@ public class Appid extends NonEntityObject {
 //      int xRefOrdinal = dataStream.getBS();
         boolean xDep = dataStream.getB();
         int unknown = dataStream.getRC();
-
-        theAppControl = handleStream.getHandle(handleOfThisObject);
-
-        List<Handle> reactorHandles = new ArrayList<>();
-        for (int i = 0; i< numReactors; i++) {
-            Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-            reactorHandles.add(reactorHandle);
-        }
-
-        if (!xDicMissingFlag) {
-            xdicobjhandle = handleStream.getHandle();
-        }
 
         externalRefBlockHandle = handleStream.getHandle(handleOfThisObject);
 
