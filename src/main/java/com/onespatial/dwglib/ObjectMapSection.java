@@ -1,3 +1,4 @@
+package com.onespatial.dwglib;
 import java.util.HashMap;
 import java.util.Map;
 

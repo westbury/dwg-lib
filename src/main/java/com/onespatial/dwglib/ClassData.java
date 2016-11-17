@@ -1,3 +1,4 @@
+package com.onespatial.dwglib;
 import bitstreams.BitBuffer;
 
 public class ClassData {

@@ -1,3 +1,4 @@
+package com.onespatial.dwglib;
 /*
  * Copyright (c) 2016, 1Spatial Group Ltd.
  *

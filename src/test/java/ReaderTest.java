@@ -12,6 +12,8 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.onespatial.dwglib.Reader;
+
 import bitstreams.BitStreams;
 
 public class ReaderTest {
