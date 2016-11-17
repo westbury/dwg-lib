@@ -1,8 +1,5 @@
 package objects;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import bitstreams.BitBuffer;
 import bitstreams.Handle;
 import dwglib.FileVersion;
@@ -10,6 +7,16 @@ import dwglib.FileVersion;
 public abstract class NonEntityObject extends CadObject {
 
     public Handle parentHandle;
+
+    // TODO we need to remove this.
+    public NonEntityObject() {
+        super(null);
+    }
+
+    public NonEntityObject(ObjectMap objectMap) {
+        super(objectMap);
+    }
+    
 
     @Override
     public void readPostCommonFields(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
@@ -22,10 +29,10 @@ public abstract class NonEntityObject extends CadObject {
 
         parentHandle = handleStream.getHandle(handleOfThisObject);
 
-        reactorHandles = new ArrayList<>();
+        reactorHandles = new Handle[numReactors];
         for (int i = 0; i< numReactors; i++) {
             Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-            reactorHandles.add(reactorHandle);
+            reactorHandles[i] = reactorHandle;
         }
 
         if (!xDicMissingFlag) {

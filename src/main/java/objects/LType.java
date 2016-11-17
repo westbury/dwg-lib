@@ -12,48 +12,81 @@ import dwglib.FileVersion;
  */
 public class LType extends NonEntityObject {
 
+    public static class Dash
+    {
+        public double dashLength;
+        public int complexShapecode;
+        public double xOffset;
+        public double yOffset;
+        public double scale;
+        public double rotation;
+        public int shapeFlag;
+        public Handle shapefileForDashHandle;
+        public Handle shapefileForShapeHandle;
+
+        public void readFromDataStream(BitBuffer dataStream) {
+            dashLength = dataStream.getBD();
+            complexShapecode = dataStream.getBS();
+            xOffset = dataStream.getRD();
+            yOffset = dataStream.getRD();
+            scale = dataStream.getBD();
+            rotation = dataStream.getBD();
+            shapeFlag = dataStream.getBS();
+        }
+        
+        public void readFromHandleStream(BitBuffer handleStream) {
+            try {
+                shapefileForDashHandle = handleStream.getHandle();
+                } catch (Exception e) {
+                    int ii = 34;
+                }
+            shapefileForShapeHandle = handleStream.getHandle();
+        }
+    }
+
+    public String entryName;
+    public boolean sixtyFourFlag;
+    public boolean xDep;
+    public String description;
+    public double patternLen;
+    public Dash[] dashes;
+    public Handle externalReferenceBlockHandle;
+
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-		// 19.4.56 LTYPE 57    
+		// 19.4.56 LTYPE 57 page 162  
 
-		String entryName = stringStream.getTU();
+		entryName = stringStream.getTU();
 		
-		boolean sixtyFourFlag = dataStream.getB();
-		dataStream.getB();
-		dataStream.getB();
-		dataStream.getB();
-//		int xRefOrdinal = dataStream.getBS();
-//		boolean xDep = dataStream.getB();
-//		String description = stringStream.getTU();
-//		double patternLen = dataStream.getBD();
-		int alignment = dataStream.getRC();
+		sixtyFourFlag = dataStream.getB();
+		xDep = dataStream.getB();
+		description = stringStream.getTU();
+		patternLen = dataStream.getBD();
+		dataStream.expectRC(65);
 		int numDashes = dataStream.getRC();
-
-		for (int i = 0; i < numDashes; i++) {
-			double dashLength = dataStream.getBD();
-			int complexShapecode = dataStream.getBS();
-			double xOffset  = dataStream.getRD();
-			double yOffset  = dataStream.getRD();
-			double scale  = dataStream.getRD();
-			double rotation  = dataStream.getRD();
-			int shapeFlag = dataStream.getBS();
-		}
-
-//		dataStream.assertEndOfStream();
+		
+		dashes = new Dash[numDashes];
+        for (int i = 0; i < numDashes; i++) {
+            dashes[i] = new Dash();
+            dashes[i].readFromDataStream(dataStream);
+        }
 		
 		// No 512 byte area in sample file
 
 		// The handles.
 		
-		Handle externalReferenceBlockHandle = handleStream.getHandle();
-		
+		externalReferenceBlockHandle = handleStream.getHandle();
+
+		    
+		if (numDashes > 1) numDashes = 1;  // Hack test
 		for (int i = 0; i < numDashes; i++) {
-			Handle shapefileForDashHandle = handleStream.getHandle();
-			Handle shapefileForShapeHandle = handleStream.getHandle();
-		}
+            dashes[i].readFromHandleStream(handleStream);
+        }
 		
 		handleStream.advanceToByteBoundary();
-//		handleStream.assertEndOfStream();
+        dataStream.assertEndOfStream();
+        stringStream.assertEndOfStream();
+		handleStream.assertEndOfStream();
 	}
 
 	public String toString() {

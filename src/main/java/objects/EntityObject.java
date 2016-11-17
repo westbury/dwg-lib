@@ -1,8 +1,5 @@
 package objects;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import bitstreams.BitBuffer;
 import bitstreams.CmColor;
 import bitstreams.Handle;
@@ -10,13 +7,21 @@ import dwglib.FileVersion;
 
 public abstract class EntityObject extends CadObject {
 
-
-    private Handle parentHandle;
-    private Handle layerHandle;
+    public Handle parentHandle;
+    public Handle layerHandle;
     public Handle linetypeHandle;
     public Handle materialHandle;
     public Handle plotstyleHandle;
 
+    // TODO we need to remove this.
+    public EntityObject() {
+        super(null);
+    }
+
+    public EntityObject(ObjectMap objectMap) {
+        super(objectMap);
+    }
+    
     public void readPostCommonFields(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 
         // 19.4.1 Common entity data, page 104
@@ -86,10 +91,10 @@ public abstract class EntityObject extends CadObject {
             parentHandle = handleStream.getHandle(handleOfThisObject);
         }
         
-        reactorHandles = new ArrayList<>();
+        reactorHandles = new Handle[numReactors];
         for (int i = 0; i< numReactors; i++) {
             Handle reactorHandle = handleStream.getHandle(handleOfThisObject);
-            reactorHandles.add(reactorHandle);
+            reactorHandles[i] = reactorHandle;
         }
 
         // These seem to be not present???

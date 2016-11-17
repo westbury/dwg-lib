@@ -1,8 +1,6 @@
 package objects;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import bitstreams.BitBuffer;
@@ -13,6 +11,10 @@ public class Dictionary extends NonEntityObject {
 
     public Map<String, Handle> dictionaryMap;
 
+    public Dictionary(ObjectMap objectMap) {
+        super(objectMap);
+    }
+    
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.42 DICTIONARY (42)
@@ -41,5 +43,11 @@ public class Dictionary extends NonEntityObject {
 	public String toString() {
 		return "DICTIONARY";
 	}
+
+    public CadObject lookupObject(String key)
+    {
+        Handle handle = dictionaryMap.get(key);
+        return objectMap.parseObject(handle);
+    }
 
 }

@@ -1,8 +1,5 @@
 package objects;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import bitstreams.BitBuffer;
 import bitstreams.CmColor;
 import bitstreams.Handle;
@@ -16,16 +13,24 @@ import dwglib.FileVersion;
  */
 public class Layer extends NonEntityObject {
 
+    private ObjectMap objectMap;
+
+    public String entryName;
+    public CmColor color;
     public Handle externalReferenceBlockHandle;
     public Handle plotStyleHandle;
     public Handle lineTypeHandle;
     public Handle materialHandle;
 
+    public Layer(ObjectMap objectMap) {
+        this.objectMap = objectMap;
+    }
+    
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.52 LAYER (51) page 158
 
-        String entryName = stringStream.getTU();
+        entryName = stringStream.getTU();
         boolean sixtyFourFlag = dataStream.getB();
         /*
          * At this point we always seem to be three bits prior to a word
@@ -36,7 +41,7 @@ public class Layer extends NonEntityObject {
 //        int xrefordinal = dataStream.getBS();
         boolean xdep = dataStream.getB();
         int flags = dataStream.getBS();
-        CmColor color = dataStream.getCMC();
+        color = dataStream.getCMC();
         
         // The handles
         
@@ -55,6 +60,11 @@ public class Layer extends NonEntityObject {
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
         handleStream.assertEndOfStream();
+    }
+
+    public AcdbPlaceHolder getPlotStyle() {
+        CadObject result = objectMap.parseObject(plotStyleHandle);
+        return (AcdbPlaceHolder) result;
     }
 
     public String toString() {

@@ -43,6 +43,7 @@ import dwglib.FileVersion;
 import objects.AcdbPlaceHolder;
 import objects.Appid;
 import objects.AppidControlObj;
+import objects.Arc;
 import objects.Attdef;
 import objects.Attrib;
 import objects.Block;
@@ -51,8 +52,10 @@ import objects.BlockHeader;
 import objects.CadObject;
 import objects.Dictionary;
 import objects.DimStyle;
+import objects.DimensionLinear;
 import objects.DimstyleControlObj;
 import objects.Endblk;
+import objects.EntityObject;
 import objects.GenericObject;
 import objects.Insert;
 import objects.LType;
@@ -63,10 +66,15 @@ import objects.Layout;
 import objects.Line;
 import objects.LwPolyline;
 import objects.MLineStyle;
+import objects.ObjectMap;
 import objects.Point;
+import objects.Solid;
+import objects.SortEntsTable;
 import objects.Style;
 import objects.StyleControlObj;
+import objects.Text;
 import objects.ThreeDSolid;
+import objects.TwoDPolyline;
 import objects.Ucs;
 import objects.UcsControlObj;
 import objects.VPort;
@@ -222,13 +230,10 @@ public class Reader {
 
 			readSystemSectionPage(buffer, sectionPageMapAddress, sectionMapId);
 
-			//			Handle h = header.CLAYER.get();
-			{
-
 
 				// Let's try a few handles and see what we get...
 
-				for (Handle h : new Handle [] { 
+				Handle[] allHeaderHandles = new Handle [] { 
 						header.CLAYER.get(), 
 						header.TEXTSTYLE.get(), 
 						header.CELTYPE.get(), 
@@ -271,17 +276,21 @@ public class Reader {
 						header.INTERFEREOBJVS.get(), 
 						header.INTERFEREVPVS.get(), 
 						header.DRAGVS.get()
-				} ) {
+				};
 
+                
+				for (int methodIndex = 0; methodIndex < allHeaderHandles.length; methodIndex++) {
+				    Handle h = allHeaderHandles[methodIndex];
 					if (h == null) continue;
 					if (h.offset == 0) continue;  // I assume this is what is known as a null handle?
-					parseAndPrint("Top-Level", h, "");
+					parseAndPrint("Top-Level " + methodIndex, h, "");
 				}
-			}
 		}
 	}
 
-	private CadObject parseObject(Handle h) {
+	// Public for time being.  Should be moved to embedded object so hidden from user.
+	// Perhaps into a class representing the object map.
+	public CadObject parseObject(Handle h) {
 		Long offsetIntoObjectMap = null;
 		for (ObjectMapSection section : this.objectMapSections) {
 			int offset = h.offset;
@@ -291,6 +300,7 @@ public class Reader {
 			}
 		}
 
+		if (offsetIntoObjectMap == null) throw new RuntimeException("remove me");
 		assert offsetIntoObjectMap != null;
 
 		if (doneObjects.containsKey(offsetIntoObjectMap)) {
@@ -306,17 +316,31 @@ public class Reader {
 
 		CadObject cadObject;
 
+		// Create placeholder class.
+		ObjectMap objectMap = new ObjectMap(this);
+		
 		if (objectType >= 500) {
 			int classIndex = objectType - 500;
 			ClassData thisClass = classes.get(classIndex);
 			System.out.println("Object Type: " + thisClass.classdxfname);
 
-			cadObject = new GenericObject(thisClass.classdxfname);
+            switch (thisClass.classdxfname) {
+            case "SORTENTSTABLE":
+                cadObject = new SortEntsTable(objectMap);
+                break;
+            default:
+                cadObject = new GenericObject(objectMap, thisClass.classdxfname);
+                break;
+            }
+			
 		} else {
 			switch (objectType) {
-			case 2:
-				cadObject = new Attrib();
+			case 1:
+				cadObject = new Text();
 				break;
+            case 2:
+                cadObject = new Attrib();
+                break;
             case 3:
                 cadObject = new Attdef();
                 break;
@@ -329,11 +353,23 @@ public class Reader {
             case 7:
                 cadObject = new Insert();
                 break;
-			case 19:
-				cadObject = new Line();
+            case 15:
+                cadObject = new TwoDPolyline();
+                break;
+			case 17:
+				cadObject = new Arc();
 				break;
+            case 19:
+                cadObject = new Line();
+                break;
+            case 21:
+                cadObject = new DimensionLinear();
+                break;
             case 27:
                 cadObject = new Point();
+                break;
+            case 31:
+                cadObject = new Solid();
                 break;
             case 34:
                 cadObject = new ViewPort();
@@ -342,19 +378,19 @@ public class Reader {
 				cadObject = new ThreeDSolid();
 				break;
 			case 42:
-				cadObject = new Dictionary();
+				cadObject = new Dictionary(objectMap);
 				break;
 			case 48:
 				cadObject = new BlockControlObj();
 				break;
 			case 49:
-				cadObject = new BlockHeader();
+				cadObject = new BlockHeader(objectMap);
 				break;
 			case 50:
-				cadObject = new LayerControlObj();
+				cadObject = new LayerControlObj(objectMap);
 				break;
 			case 51:
-				cadObject = new Layer();
+				cadObject = new Layer(objectMap);
 				break;
 			case 52:
 				cadObject = new StyleControlObj();
@@ -408,16 +444,15 @@ public class Reader {
 				cadObject = new XRecord();
 				break;
 			case 80:
-				cadObject = new AcdbPlaceHolder();
+				cadObject = new AcdbPlaceHolder(objectMap);
 				break;
 			case 82:
-				cadObject = new Layout();
+				cadObject = new Layout(objectMap);
 				break;
 			default:
-				cadObject = new GenericObject(objectType);
+				cadObject = new GenericObject(objectMap, objectType);
 				break;
 			}
-			System.out.println("Object Type: " + objectType + " = " + cadObject);
 		}
 
 		doneObjects.put(offsetIntoObjectMap, cadObject);
@@ -443,78 +478,110 @@ public class Reader {
 	        StringBuffer trace = new StringBuffer();
 	        appendTrace(trace, data);
 
-	        System.out.println("     EED data for " + app.entryName + " = " + trace.toString());
+	        System.out.println(indent + "    EED data for " + app.entryName + " = " + trace.toString());
 	    }
 
 
-	    
+        for (Handle reactorHandle : cadObject.reactorHandles) {
+            parseAndPrintPossiblyNull("Reactor", reactorHandle, indent);
+        }
+        if (cadObject.xdicobjhandle != null) {
+            parseAndPrint("xdicobj", cadObject.xdicobjhandle, indent);
+        }
+        
+	    if (cadObject instanceof EntityObject) {
+	        EntityObject entity = (EntityObject)cadObject;
+	        if (entity.linetypeHandle != null) {
+	            parseAndPrint("Line Type", entity.linetypeHandle, indent);
+	        }
+	        if (entity.materialHandle != null) {
+	            parseAndPrint("Material", entity.materialHandle, indent);
+	        }
+	        if (entity.plotstyleHandle != null) {
+	            parseAndPrint("Plotstyle", entity.plotstyleHandle, indent);
+	        }
+	    }
 	    
 		switch (cadObject.getClass().getSimpleName()) {
-		//        case 38:  // 3DSOLID
-		//        case 42:  // DICTIONARY
-		//
-		//        case 53: // SHAPEFILE or STYLE ??????
-
-
-
 		case "Dictionary":
 		{
 			Dictionary dictionary = (Dictionary)cadObject;
 			for (String key : dictionary.dictionaryMap.keySet()) {
 				Handle handle = dictionary.dictionaryMap.get(key); 
-				if (handle.offset == 0) {
-					System.out.println("Object: null");
-				} else {
-					parseAndPrint("[" + key + "]", handle, indent);
-				}
+				parseAndPrintPossiblyNull("[" + key + "]", handle, indent);
 			}
 		}
 		break;
 
-		case "Layer": //51:  // LAYER
+		case "LayerControlObj":
+		{
+		    LayerControlObj layerControlObj = (LayerControlObj)cadObject;
+
+		    for (Handle lineTypeHandle : layerControlObj.layerObjectHandles) {
+		        parseAndPrint("Layer", lineTypeHandle, indent);
+		    }
+		}
+		break;
+
+		case "Layer":
 		{
 			Layer layer = (Layer)cadObject;
 
-			parseAndPrint("Layer Control", layer.parentHandle, indent);
 			parseAndPrint("External Ref Block", layer.externalReferenceBlockHandle, indent);
 			parseAndPrint("Plot Style", layer.plotStyleHandle, indent);
 			parseAndPrint("Line Type", layer.lineTypeHandle, indent);
 			parseAndPrint("Material", layer.materialHandle, indent);
-
-			for (Handle reactorHandle : layer.reactorHandles) {
-				if (reactorHandle.offset == 0) {
-					System.out.println("Object: null");
-				} else {
-					parseAndPrint("Reactor", reactorHandle, indent);
-				}
-			}
 		}
 		break;
 
-		case "LTypeControlObj": // 56:  // LTYPE CONTROL OBJ
-			LTypeControlObj ltypeControlObj = (LTypeControlObj)cadObject;
+		case "LTypeControlObj":
+		    LTypeControlObj ltypeControlObj = (LTypeControlObj)cadObject;
 
-			for (Handle lineTypeHandle : ltypeControlObj.lineTypeHandles) {
-				parseAndPrint("Line Type", lineTypeHandle, indent);
-			}
-			parseAndPrint("By-Layer Linetype", ltypeControlObj.bylayerLinetypeHandle, indent);
-			parseAndPrint("By-Block Linetype", ltypeControlObj.byblockLinetypeHandle, indent);
-			break;
+		    for (Handle lineTypeHandle : ltypeControlObj.lineTypeHandles) {
+		        parseAndPrint("Line Type", lineTypeHandle, indent);
+		    }
+		    parseAndPrint("By-Layer Linetype", ltypeControlObj.bylayerLinetypeHandle, indent);
+		    parseAndPrint("By-Block Linetype", ltypeControlObj.byblockLinetypeHandle, indent);
+		    break;
 
-			//        case 57: // LTYPE
+		case "LType":
+		    LType ltype = (LType)cadObject;
+		    parseAndPrint("External Reference Block", ltype.externalReferenceBlockHandle, indent);
+		    for (int i = 0; i < ltype.dashes.length; i++) {
+		        if (ltype.dashes[i].shapefileForDashHandle != null)
+		        parseAndPrint("Dash["+i+"](dash)", ltype.dashes[i].shapefileForDashHandle, indent);
+                if (ltype.dashes[i].shapefileForShapeHandle != null)
+		        parseAndPrint("Dash["+i+"](shape)", ltype.dashes[i].shapefileForShapeHandle, indent);
+		    }
+		    break;
 
-			//        case 65: // VPORT
-
-			//        case "LwPolyline": //77:
-			//        break;
-
+        case "Layout":
+            Layout layout = (Layout)cadObject;
+            parseAndPrintObject("Plot View", layout.getPlotView(), indent);
+            parseAndPrintObject("Visual Style", layout.getVisualStyle(), indent);
+            parseAndPrintObject("Paperspace Block Record", layout.getPaperspaceBlockRecord(), indent);
+            parseAndPrintObject("Last Active Viewport", layout.getLastActiveViewport(), indent);
+            parseAndPrintObject("Base UCS", layout.getBaseUcs(), indent);
+            parseAndPrintObject("Named UCS", layout.getNamedUcs(), indent);
+            for (CadObject viewport : layout.getViewPorts()) {
+                parseAndPrintObject("Viewport", viewport, indent);
+            }
+            break;
+		    
+        case "SortEntsTable":
+            SortEntsTable sortEntsTable = (SortEntsTable)cadObject;
+            for (CadObject sortObject : sortEntsTable.getSortObjects()) {
+                parseAndPrintObject("Sort Object", sortObject, indent);
+            }
+            parseAndPrintObject("Owner", sortEntsTable.getOwner(), indent);
+            for (CadObject entity : sortEntsTable.getEntities()) {
+                parseAndPrintObject("Entity", entity, indent);
+            }
+            break;
+            
 		default:
 			for (Handle referencedHandle : cadObject.genericHandles) {
-				if (referencedHandle.offset == 0) {
-					System.out.println("Object: null");
-				} else {
-					parseAndPrint("Generic", referencedHandle, indent);
-				}
+				parseAndPrintPossiblyNull("Generic", referencedHandle, indent);
 			}
 		}
 	}
@@ -560,8 +627,17 @@ public class Reader {
         }
     }
 
-	private void parseAndPrint(String handleName, Handle referencedHandle, String indent)
-	{
+    
+    private void parseAndPrintPossiblyNull(String handleName, Handle referencedHandle, String indent) {
+        if (referencedHandle.offset == 0) {
+            System.out.println(indent + handleName + ": null");
+        } else {
+            parseAndPrint(handleName, referencedHandle, indent);
+        }
+
+    }
+
+    private void parseAndPrint(String handleName, Handle referencedHandle, String indent) {
 		if (referencedHandle.offset == 0) {
 			System.out.println(indent + handleName + ": null");
 			return;
@@ -580,6 +656,24 @@ public class Reader {
 
 		printObject(cadObject, indent + "   ");
 	}
+
+    private void parseAndPrintObject(String handleName, CadObject cadObject, String indent) {
+        if (cadObject == null) {
+            System.out.println(indent + handleName + ": null");
+            return;
+        }
+
+        if (printed.contains(cadObject)) {
+            System.out.println(indent + handleName + ": " + cadObject.toString() + " already printed");
+            return;
+        }
+        printed.add(cadObject);
+
+
+        System.out.println(indent + handleName + ": " + cadObject.toString() + ":");
+
+        printObject(cadObject, indent + "   ");
+    }
 
 	int crc32Table[] =
 		{
@@ -1050,5 +1144,17 @@ public class Reader {
 		}
 
 	}
+
+    public Layer getCLayer()
+    {
+        CadObject result = this.parseObject(header.CLAYER.get());
+        return (Layer)result;
+    }
+
+    public LayerControlObj getLayerControlObject()
+    {
+        CadObject result = this.parseObject(header.LAYER_CONTROL_OBJECT.get());
+        return (LayerControlObj)result;
+    }
 
 }

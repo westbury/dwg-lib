@@ -1,6 +1,7 @@
 package objects;
 
 import java.io.UnsupportedEncodingException;
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,9 +15,11 @@ import dwglib.FileVersion;
 
 public abstract class CadObject {
 
-    protected Handle handleOfThisObject;
+    protected final ObjectMap objectMap;
+    
+    public Handle handleOfThisObject;
 
-    public List<Handle> reactorHandles;
+    public Handle [] reactorHandles;
 
     public List<Handle> genericHandles = new ArrayList<>();
 
@@ -25,6 +28,10 @@ public abstract class CadObject {
     // Defined in this class but always set in derived classes
     public Handle xdicobjhandle;
 
+    public CadObject(ObjectMap objectMap) {
+        this.objectMap = objectMap;
+    }
+    
     public void readFromStreams(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         handleOfThisObject = dataStream.getHandle();
 
@@ -171,4 +178,33 @@ public abstract class CadObject {
         handleStream.assertEndOfStream();
     }
 
+    public List<CadObject> getReactors()
+    {
+        return new AbstractList<CadObject>() {
+
+            @Override
+            public CadObject get(int index)
+            {
+                CadObject result = objectMap.parseObject(reactorHandles[index]);
+                return result;
+            }
+
+            @Override
+            public int size()
+            {
+                return reactorHandles.length;
+            }
+        };
+    }
+
+
+    public Dictionary getXDictionary()
+    {
+        if (xdicobjhandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObject(xdicobjhandle);
+            return (Dictionary) result;
+        }
+    }
 }

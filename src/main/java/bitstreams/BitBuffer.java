@@ -22,6 +22,7 @@ package bitstreams;
  */
 
 import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -241,6 +242,12 @@ public class BitBuffer {
         return new Point2D(x, y);
     }
 
+    public Point2D get2BD() {
+        double x = getBD();
+        double y = getBD();
+        return new Point2D(x, y);
+    }
+
     public Point3D get3BD() {
         double x = getBD();
         double y = getBD();
@@ -413,6 +420,14 @@ public class BitBuffer {
         boolean actual = getB();
         if (actual != expected) {
             throw new RuntimeException("unknown bit value: investigation needed.");
+        }
+    }
+
+    public void expectRC(int expected)
+    {
+        int actual = getRC();
+        if (actual != expected) {
+            throw new RuntimeException(MessageFormat.format("Unknown RC value: {0} expected but {1} found.", expected, actual));
         }
     }
 

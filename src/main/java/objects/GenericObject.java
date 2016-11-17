@@ -2,13 +2,15 @@ package objects;
 
 public class GenericObject extends NonEntityObject {
 
-	private String objectType;
+	public String objectType;
 
-	public GenericObject(int objectType) {
+	public GenericObject(ObjectMap objectMap, int objectType) {
+        super(objectMap);
 		this.objectType = Integer.toString(objectType);
 	}
 
-	public GenericObject(String classdxfname) {
+	public GenericObject(ObjectMap objectMap, String classdxfname) {
+        super(objectMap);
 		this.objectType = classdxfname;
 	}
 

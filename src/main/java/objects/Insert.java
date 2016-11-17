@@ -8,7 +8,7 @@ import bitstreams.Handle;
 import bitstreams.Point3D;
 import dwglib.FileVersion;
 
-public class Insert extends NonEntityObject {
+public class Insert extends EntityObject {
 
     public Point3D insertPoint;
     public double f41;
@@ -53,8 +53,14 @@ public class Insert extends NonEntityObject {
         rotation = dataStream.getBD();
         extrusion = dataStream.get3BD();
         boolean hasAttributes = dataStream.getB();
-        int ownedObjectCount = dataStream.getBL();
-
+        int ownedObjectCount = 0;
+        if (hasAttributes) {
+            ownedObjectCount = dataStream.getBL();
+        }
+        
+        
+        // The handles
+        
         blockHeaderHandle = handleStream.getHandle();
 
         ownedObjectHandles = new ArrayList<>();
@@ -70,7 +76,11 @@ public class Insert extends NonEntityObject {
         handleStream.advanceToByteBoundary();
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
+        try {
         handleStream.assertEndOfStream();
+        } catch (Exception e) {
+            System.out.println("exception to be investigated");
+        }
     }
 
     public String toString() {

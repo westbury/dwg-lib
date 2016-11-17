@@ -7,10 +7,6 @@ import dwglib.FileVersion;
 
 public class Line extends EntityObject {
 
-    public String toString() {
-        return "LINE";
-    }
-
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 
@@ -47,5 +43,9 @@ public class Line extends EntityObject {
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
         handleStream.assertEndOfStream();
+    }
+
+    public String toString() {
+        return "LINE";
     }
 }

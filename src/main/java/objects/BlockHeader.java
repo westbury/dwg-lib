@@ -16,27 +16,29 @@ import dwglib.FileVersion;
  */
 public class BlockHeader extends NonEntityObject {
 
-    public Handle blockControlHandle;
-    public List<Handle> reactorHandles = new ArrayList<>();
     public String entryName;
     public boolean sixtyFourFlag;
     private boolean blockIsXref;
     private boolean xrefOverlaid;
-    private boolean loadedBit;
+    public boolean loadedBit;
     public Point3D basePoint;
     public String xrefPName;
-    private String blockDescription;
+    public String blockDescription;
     private int [] previewData;
-    private int insertUnits;
-    private boolean explodable;
-    private int blockScaling;
-    private Handle firstEntityHandle;
+    public int insertUnits;
+    public boolean explodable;
+    public int blockScaling;
+    public Handle firstEntityHandle;
     public Handle lastEntityHandle;
     public List<Handle> ownedObjectHandles;
     public Handle endBlockHandle;
     public List<List<Handle>> insertHandles;
     public Handle layoutHandle;
 
+    public BlockHeader(ObjectMap objectMap) {
+        super(objectMap);
+    }
+    
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.50 BLOCK HEADER (49) page 155

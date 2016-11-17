@@ -1,3 +1,4 @@
+package com.onespatial.dwglib;
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
