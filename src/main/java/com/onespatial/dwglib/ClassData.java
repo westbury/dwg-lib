@@ -1,5 +1,5 @@
 package com.onespatial.dwglib;
-import bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.BitBuffer;
 
 public class ClassData {
 

@@ -1,10 +1,10 @@
 package com.onespatial.dwglib;
-import bitstreams.BitBuffer;
-import bitstreams.Handle;
-import bitstreams.HandleType;
-import bitstreams.Point2D;
-import bitstreams.Point3D;
-import bitstreams.Value;
+import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Handle;
+import com.onespatial.dwglib.bitstreams.HandleType;
+import com.onespatial.dwglib.bitstreams.Point2D;
+import com.onespatial.dwglib.bitstreams.Point3D;
+import com.onespatial.dwglib.bitstreams.Value;
 
 public class SpaceHeader {
 

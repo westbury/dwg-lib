@@ -8,17 +8,17 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import objects.AcdbPlaceHolder;
-import objects.BlockHeader;
-import objects.CadObject;
-import objects.Dictionary;
-import objects.GenericObject;
-import objects.Layer;
-import objects.LayerControlObj;
-import objects.Layout;
-import objects.LwPolyline;
-import objects.LwPolyline.VertexOfLwPolyline;
-import objects.SortEntsTable;
+import com.onespatial.dwglib.objects.AcdbPlaceHolder;
+import com.onespatial.dwglib.objects.BlockHeader;
+import com.onespatial.dwglib.objects.CadObject;
+import com.onespatial.dwglib.objects.Dictionary;
+import com.onespatial.dwglib.objects.GenericObject;
+import com.onespatial.dwglib.objects.Layer;
+import com.onespatial.dwglib.objects.LayerControlObj;
+import com.onespatial.dwglib.objects.Layout;
+import com.onespatial.dwglib.objects.LwPolyline;
+import com.onespatial.dwglib.objects.SortEntsTable;
+import com.onespatial.dwglib.objects.LwPolyline.VertexOfLwPolyline;
 
 public class TraversalTest {
 

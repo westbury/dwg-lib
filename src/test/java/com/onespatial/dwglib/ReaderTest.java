@@ -14,8 +14,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.onespatial.dwglib.Reader;
-
-import bitstreams.BitStreams;
+import com.onespatial.dwglib.bitstreams.BitStreams;
 
 public class ReaderTest {
 

@@ -24,13 +24,12 @@ package com.onespatial.dwglib;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
-import bitstreams.BitBuffer;
-import bitstreams.BitStreams;
-import bitstreams.CmColor;
-import bitstreams.Handle;
-import bitstreams.HandleType;
-import bitstreams.Value;
-import dwglib.FileVersion;
+import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.BitStreams;
+import com.onespatial.dwglib.bitstreams.CmColor;
+import com.onespatial.dwglib.bitstreams.Handle;
+import com.onespatial.dwglib.bitstreams.HandleType;
+import com.onespatial.dwglib.bitstreams.Value;
 
 public class Header
 {
