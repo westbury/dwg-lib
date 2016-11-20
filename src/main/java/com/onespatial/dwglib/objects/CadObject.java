@@ -2,10 +2,14 @@ package com.onespatial.dwglib.objects;
 
 import java.io.UnsupportedEncodingException;
 import java.util.AbstractList;
+import java.util.AbstractMap;
+import java.util.AbstractSet;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Stack;
 
 import com.onespatial.dwglib.FileVersion;
@@ -19,14 +23,15 @@ public abstract class CadObject {
     
     public Handle handleOfThisObject;
 
-    public Handle [] reactorHandles;
+    // Defined in this class but always set in derived classes
+    protected Handle [] reactorHandles;
 
-    public List<Handle> genericHandles = new ArrayList<>();
+    private List<Handle> genericHandles = new ArrayList<>();
 
-    public Map<Handle, Object[]> extendedEntityData = new HashMap<>();
+    private Map<Handle, Object[]> extendedEntityData = new HashMap<>();
 
     // Defined in this class but always set in derived classes
-    public Handle xdicobjhandle;
+    protected Handle xdicobjhandle;
 
     public CadObject(ObjectMap objectMap) {
         this.objectMap = objectMap;
@@ -206,5 +211,82 @@ public abstract class CadObject {
             CadObject result = objectMap.parseObject(xdicobjhandle);
             return (Dictionary) result;
         }
+    }
+
+    public Map<Appid, Object[]> getExtendedEntityData() {
+        return new AbstractMap<Appid, Object[]>(){
+
+            @Override
+            public Set<java.util.Map.Entry<Appid, Object[]>> entrySet() {
+                return new AbstractSet<java.util.Map.Entry<Appid, Object[]>>() {
+
+                    @Override
+                    public Iterator<java.util.Map.Entry<Appid, Object[]>> iterator() {
+                        final Iterator<java.util.Map.Entry<Handle, Object[]>> iter = extendedEntityData.entrySet().iterator();
+                        return new Iterator<java.util.Map.Entry<Appid, Object[]>>() {
+
+                            @Override
+                            public boolean hasNext() {
+                                return iter.hasNext();
+                            }
+
+                            @Override
+                            public java.util.Map.Entry<Appid, Object[]> next() {
+                                java.util.Map.Entry<Handle, Object[]> e = iter.next();
+                                return new java.util.Map.Entry<Appid, Object[]>() {
+
+                                    @Override
+                                    public Appid getKey() {
+                                        return (Appid)objectMap.parseObject(e.getKey());
+                                    }
+
+                                    @Override
+                                    public Object[] getValue() {
+                                        return e.getValue();
+                                    }
+
+                                    @Override
+                                    public Object[] setValue(Object[] arg0) {
+                                        // TODO Auto-generated method stub
+                                        return null;
+                                    }};
+                            }
+                        };
+                    }
+
+                    @Override
+                    public int size() {
+                        return extendedEntityData.size();
+                    }
+                };
+            }
+        };
+    }
+
+    public Dictionary getXdicobj() {
+        if (xdicobjhandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObject(xdicobjhandle);
+            return (Dictionary) result;
+        }
+    }
+
+    public List<CadObject> getGenericObjects() {
+        return new AbstractList<CadObject>() {
+
+            @Override
+            public CadObject get(int index)
+            {
+                CadObject result = objectMap.parseObjectPossiblyNull(genericHandles.get(index));
+                return result;
+            }
+
+            @Override
+            public int size()
+            {
+                return genericHandles.size();
+            }
+        };
     }
 }

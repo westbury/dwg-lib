@@ -144,8 +144,8 @@ public class Layout extends NonEntityObject {
     }
 
     public CadObject getLastActiveViewport() {
-        CadObject result = objectMap.parseObject(lastActiveViewportHandle);
-        if (!(result instanceof VPort || result instanceof ViewPort)) {
+        CadObject result = objectMap.parseObjectPossiblyNull(lastActiveViewportHandle);
+        if (!(result == null || result instanceof VPort || result instanceof ViewPort)) {
             throw new RuntimeException("unexpected object class");
         }
         return result;

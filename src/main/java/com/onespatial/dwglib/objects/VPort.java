@@ -6,6 +6,10 @@ import com.onespatial.dwglib.bitstreams.CmColor;
 
 public class VPort extends NonEntityObject {
 
+    public VPort(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.62 VPORT 65 page 169    

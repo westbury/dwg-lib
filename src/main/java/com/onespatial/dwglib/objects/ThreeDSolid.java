@@ -51,6 +51,10 @@ public class ThreeDSolid extends EntityObject {
 
     public Wire [] wires;
 
+    public ThreeDSolid(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.39 REGION (37), 3DSOLID (38), BODY (39) page 137

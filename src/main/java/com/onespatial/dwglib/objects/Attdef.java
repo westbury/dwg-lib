@@ -44,9 +44,13 @@ public class Attdef extends EntityObject {
 
     public int version;
 
-    private String prompt;
+    public String prompt;
 
-    public Handle styleHandle;
+    private Handle styleHandle;
+
+    public Attdef(ObjectMap objectMap) {
+        super(objectMap);
+    }
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
@@ -104,4 +108,10 @@ public class Attdef extends EntityObject {
 	public String toString() {
 		return "ATTDEF";
 	}
+
+    public CadObject getStyle() {
+        CadObject result = objectMap.parseObject(styleHandle);
+        return (CadObject) result;
+    }
+
 }

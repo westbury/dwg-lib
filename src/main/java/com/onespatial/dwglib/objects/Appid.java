@@ -1,10 +1,5 @@
 package com.onespatial.dwglib.objects;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 import com.onespatial.dwglib.bitstreams.Handle;
@@ -13,7 +8,11 @@ public class Appid extends NonEntityObject {
 
     public String entryName;
 
-    public Handle externalRefBlockHandle;
+    private Handle externalRefBlockHandle;
+
+    public Appid(ObjectMap objectMap) {
+        super(objectMap);
+    }
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
@@ -39,6 +38,11 @@ public class Appid extends NonEntityObject {
 
     public String toString() {
         return "APPID";
+    }
+
+    public CadObject getExternalRefBlock() {
+        CadObject result = objectMap.parseObjectPossiblyNull(externalRefBlockHandle);
+        return (CadObject) result;
     }
 
 }

@@ -23,6 +23,10 @@ public class Text extends EntityObject {
     public int verticalAlignment;
     public Handle styleHandle;
 
+    public Text(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.3 TEXT (1) page 106    

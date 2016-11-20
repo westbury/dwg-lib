@@ -20,6 +20,10 @@ public class TwoDPolyline extends EntityObject {
     public List<Handle> ownedObjectHandles;
     public Handle seqEndHandle;
 
+    public TwoDPolyline(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 

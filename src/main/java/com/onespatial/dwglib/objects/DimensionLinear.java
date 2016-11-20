@@ -7,6 +7,10 @@ import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class DimensionLinear extends Dimension {
 
+    public DimensionLinear(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readDimensionSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 

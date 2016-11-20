@@ -2,7 +2,11 @@ package com.onespatial.dwglib.objects;
 
 public class UcsControlObj extends NonEntityObject {
 
-	public String toString() {
+	public UcsControlObj(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
+    public String toString() {
 		return "UCS CONTROL OBJ";
 	}
 

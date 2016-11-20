@@ -12,7 +12,7 @@ import com.onespatial.dwglib.bitstreams.Handle;
  */
 public class LType extends NonEntityObject {
 
-    public static class Dash
+    public class Dash
     {
         public double dashLength;
         public int complexShapecode;
@@ -21,8 +21,8 @@ public class LType extends NonEntityObject {
         public double scale;
         public double rotation;
         public int shapeFlag;
-        public Handle shapefileForDashHandle;
-        public Handle shapefileForShapeHandle;
+        private Handle shapefileForDashHandle;
+        private Handle shapefileForShapeHandle;
 
         public void readFromDataStream(BitBuffer dataStream) {
             dashLength = dataStream.getBD();
@@ -42,6 +42,16 @@ public class LType extends NonEntityObject {
                 }
             shapefileForShapeHandle = handleStream.getHandle();
         }
+
+        public CadObject getShapefileForDash() {
+            CadObject result = objectMap.parseObject(shapefileForDashHandle);
+            return (CadObject) result;
+        }
+
+        public CadObject getShapefileForShape() {
+            CadObject result = objectMap.parseObject(shapefileForShapeHandle);
+            return (CadObject) result;
+        }
     }
 
     public String entryName;
@@ -50,8 +60,12 @@ public class LType extends NonEntityObject {
     public String description;
     public double patternLen;
     public Dash[] dashes;
-    public Handle externalReferenceBlockHandle;
+    private Handle externalReferenceBlockHandle;
 
+    public LType(ObjectMap objectMap) {
+        super(objectMap);
+    }
+    
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 		// 19.4.56 LTYPE 57 page 162  
@@ -92,5 +106,10 @@ public class LType extends NonEntityObject {
 	public String toString() {
 		return "LTYPE";
 	}
+
+    public CadObject getExternalReferenceBlock() {
+        CadObject result = objectMap.parseObjectPossiblyNull(externalReferenceBlockHandle);
+        return (CadObject) result;
+    }
 
 }

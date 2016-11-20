@@ -13,6 +13,10 @@ public class Arc extends EntityObject {
     public double startAngle;
     public double endAngle;
 
+    public Arc(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.18 ARC (17) page 117    

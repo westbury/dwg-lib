@@ -2,7 +2,11 @@ package com.onespatial.dwglib.objects;
 
 public class BlockControlObj extends NonEntityObject {
 
-	public String toString() {
+	public BlockControlObj(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
+    public String toString() {
 		return "BLOCK CONTROL OBJ";
 	}
 

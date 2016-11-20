@@ -1,5 +1,6 @@
 package com.onespatial.dwglib.objects;
 
+import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,12 +29,12 @@ public class BlockHeader extends NonEntityObject {
     public int insertUnits;
     public boolean explodable;
     public int blockScaling;
-    public Handle firstEntityHandle;
-    public Handle lastEntityHandle;
-    public List<Handle> ownedObjectHandles;
-    public Handle endBlockHandle;
-    public List<List<Handle>> insertHandles;
-    public Handle layoutHandle;
+    private Handle firstEntityHandle;
+    private Handle lastEntityHandle;
+    private Handle[] ownedObjectHandles;
+    private Handle endBlockHandle;
+    private List<List<Handle>> insertHandles;
+    private Handle layoutHandle;
 
     public BlockHeader(ObjectMap objectMap) {
         super(objectMap);
@@ -83,10 +84,9 @@ public class BlockHeader extends NonEntityObject {
             lastEntityHandle = handleStream.getHandle(handleOfThisObject);
         }
 
-        ownedObjectHandles = new ArrayList<>();
+        ownedObjectHandles = new Handle[ownedObjectCount];
         for (int i = 0; i< ownedObjectCount; i++) {
-            Handle ownedObjectHandle = handleStream.getHandle();
-            ownedObjectHandles.add(ownedObjectHandle);
+            ownedObjectHandles[i] = handleStream.getHandle();
         }
 
         endBlockHandle = handleStream.getHandle();
@@ -113,5 +113,69 @@ public class BlockHeader extends NonEntityObject {
 	public String toString() {
 		return "BLOCK HEADER";
 	}
+
+    public CadObject getFirstEntity() {
+        if (firstEntityHandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObjectPossiblyNull(firstEntityHandle);
+            return (CadObject) result;
+        }
+    }
+
+    public CadObject getLastEntity() {
+        if (lastEntityHandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObjectPossiblyNull(lastEntityHandle);
+            return (CadObject) result;
+        }
+    }
+
+    public List<CadObject> getOwnedObjects()
+    {
+        return new AbstractList<CadObject>() {
+
+            @Override
+            public CadObject get(int index)
+            {
+                CadObject result = objectMap.parseObject(ownedObjectHandles[index]);
+                return (CadObject) result;
+            }
+
+            @Override
+            public int size()
+            {
+                return ownedObjectHandles.length;
+            }
+        };
+    }
+
+    public CadObject getEndBlock() {
+        CadObject result = objectMap.parseObject(endBlockHandle);
+        return (CadObject) result;
+    }
+
+    /**
+     * This method returns all inserts in a flat list.  This no doubt
+     * needs to be changed to return a two dimensional list in case
+     * consumers need the extra information.
+     */
+    public List<CadObject> getInserts()
+    {
+        List<CadObject> result = new ArrayList<>();
+        
+        for (List<Handle> x : this.insertHandles) {
+            for (Handle y : x) {
+                CadObject insert = objectMap.parseObject(y);
+                result.add(insert);
+            }
+        }
+        return result;
+    }
+    public CadObject getLayout() {
+        CadObject result = objectMap.parseObject(layoutHandle);
+        return (CadObject) result;
+    }
 
 }

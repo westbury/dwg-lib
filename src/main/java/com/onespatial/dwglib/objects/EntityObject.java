@@ -9,14 +9,9 @@ public abstract class EntityObject extends CadObject {
 
     public Handle parentHandle;
     public Handle layerHandle;
-    public Handle linetypeHandle;
+    private Handle linetypeHandle;
     public Handle materialHandle;
     public Handle plotstyleHandle;
-
-    // TODO we need to remove this.
-    public EntityObject() {
-        super(null);
-    }
 
     public EntityObject(ObjectMap objectMap) {
         super(objectMap);
@@ -116,5 +111,32 @@ public abstract class EntityObject extends CadObject {
         }
         
         readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
-    }    
+    }
+
+    public LType getLinetype() {
+        if (linetypeHandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObject(linetypeHandle);
+            return (LType) result;
+        }
+    }
+
+    public CadObject getMaterial() {
+        if (materialHandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObject(materialHandle);
+            return (NonEntityObject) result;
+        }
+    }
+
+    public CadObject getPlotstyle() {
+        if (plotstyleHandle == null) {
+            return null;
+        } else {
+            CadObject result = objectMap.parseObject(plotstyleHandle);
+            return (NonEntityObject) result;
+        }
+    }
 }

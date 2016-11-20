@@ -2,6 +2,7 @@ package com.onespatial.dwglib.objects;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
@@ -19,6 +20,16 @@ public class Dictionary extends NonEntityObject {
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.42 DICTIONARY (42)
 
+        readCommonDictionaryData(dataStream, stringStream, handleStream);
+        
+        handleStream.advanceToByteBoundary();
+
+        dataStream.assertEndOfStream();
+        stringStream.assertEndOfStream();
+        handleStream.assertEndOfStream();
+	}
+
+    protected void readCommonDictionaryData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream) {
         int numItems = dataStream.getBL();
 
         int cloningFlag = dataStream.getBS();
@@ -32,13 +43,7 @@ public class Dictionary extends NonEntityObject {
             Handle handle = handleStream.getHandle(handleOfThisObject);
             dictionaryMap.put(key, handle);
         }
-        
-        handleStream.advanceToByteBoundary();
-
-        dataStream.assertEndOfStream();
-        stringStream.assertEndOfStream();
-        handleStream.assertEndOfStream();
-	}
+    }
 
 	public String toString() {
 		return "DICTIONARY";
@@ -47,7 +52,11 @@ public class Dictionary extends NonEntityObject {
     public CadObject lookupObject(String key)
     {
         Handle handle = dictionaryMap.get(key);
-        return objectMap.parseObject(handle);
+        return objectMap.parseObjectPossiblyNull(handle);
+    }
+
+    public Set<String> getKeys() {
+        return dictionaryMap.keySet();
     }
 
 }

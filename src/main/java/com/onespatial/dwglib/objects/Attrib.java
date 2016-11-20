@@ -44,7 +44,11 @@ public class Attrib extends EntityObject {
 
     public int version;
 
-    public Handle styleHandle;
+    private Handle styleHandle;
+
+    public Attrib(ObjectMap objectMap) {
+        super(objectMap);
+    }
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
@@ -98,4 +102,10 @@ public class Attrib extends EntityObject {
 	public String toString() {
 		return "ATTRIB";
 	}
+
+    public CadObject getStyle() {
+        CadObject result = objectMap.parseObject(styleHandle);
+        return (CadObject) result;
+    }
+
 }

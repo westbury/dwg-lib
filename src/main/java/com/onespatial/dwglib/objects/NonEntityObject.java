@@ -8,15 +8,9 @@ public abstract class NonEntityObject extends CadObject {
 
     public Handle parentHandle;
 
-    // TODO we need to remove this.
-    public NonEntityObject() {
-        super(null);
-    }
-
     public NonEntityObject(ObjectMap objectMap) {
         super(objectMap);
     }
-    
 
     @Override
     public void readPostCommonFields(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {

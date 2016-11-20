@@ -13,17 +13,15 @@ import com.onespatial.dwglib.bitstreams.Handle;
  */
 public class Layer extends NonEntityObject {
 
-    private ObjectMap objectMap;
-
     public String entryName;
     public CmColor color;
-    public Handle externalReferenceBlockHandle;
-    public Handle plotStyleHandle;
-    public Handle lineTypeHandle;
-    public Handle materialHandle;
+    private Handle externalReferenceBlockHandle;
+    private Handle plotStyleHandle;
+    private Handle lineTypeHandle;
+    private Handle materialHandle;
 
     public Layer(ObjectMap objectMap) {
-        this.objectMap = objectMap;
+        super(objectMap);
     }
     
     @Override
@@ -62,13 +60,28 @@ public class Layer extends NonEntityObject {
         handleStream.assertEndOfStream();
     }
 
+    public String toString() {
+        return "LAYER";
+    }
+
+    public CadObject getExternalReferenceBlock() {
+        CadObject result = objectMap.parseObjectPossiblyNull(externalReferenceBlockHandle);
+        return (CadObject) result;
+    }
+
     public AcdbPlaceHolder getPlotStyle() {
         CadObject result = objectMap.parseObject(plotStyleHandle);
         return (AcdbPlaceHolder) result;
     }
 
-    public String toString() {
-        return "LAYER";
+    public CadObject getLineType() {
+        CadObject result = objectMap.parseObject(lineTypeHandle);
+        return (CadObject) result;
+    }
+
+    public CadObject getMaterial() {
+        CadObject result = objectMap.parseObject(materialHandle);
+        return (CadObject) result;
     }
 
 }

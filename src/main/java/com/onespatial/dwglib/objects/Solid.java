@@ -15,6 +15,10 @@ public class Solid extends EntityObject {
     public Point2D corner4;
     public Point3D extrusion;
 
+    public Solid(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.33 SOLID (31) page 129    

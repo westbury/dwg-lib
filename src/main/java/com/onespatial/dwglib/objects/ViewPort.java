@@ -80,6 +80,10 @@ public class ViewPort extends EntityObject {
 
     public CmColor ambientLightColor;
 
+    public ViewPort(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 

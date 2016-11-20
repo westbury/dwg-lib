@@ -7,6 +7,10 @@ import com.onespatial.dwglib.bitstreams.Point3D;
 
 public abstract class Dimension extends EntityObject {
 
+    public Dimension(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 

@@ -2,7 +2,11 @@ package com.onespatial.dwglib.objects;
 
 public class DimStyle extends NonEntityObject {
 
-	public String toString() {
+	public DimStyle(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
+    public String toString() {
 		return "DIMSTYLE";
 	}
 

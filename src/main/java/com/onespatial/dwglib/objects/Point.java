@@ -14,6 +14,10 @@ public class Point extends EntityObject {
     
     public double xAxisAngle;
 
+    public Point(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 

@@ -3,9 +3,13 @@ package com.onespatial.dwglib.objects;
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 
-public class Block extends NonEntityObject {
+public class Block extends EntityObject {
 
     public String blockName;
+
+    public Block(ObjectMap objectMap) {
+        super(objectMap);
+    }
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {

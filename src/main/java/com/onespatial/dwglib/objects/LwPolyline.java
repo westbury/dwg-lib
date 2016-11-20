@@ -16,6 +16,10 @@ public class LwPolyline extends EntityObject {
 
     public Double constantWidth;
 
+    public LwPolyline(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 
@@ -134,8 +138,6 @@ public class LwPolyline extends EntityObject {
                 if (numberOfPoints != 2 || numberOfVariableWidths != 2)
                     System.out.println("here");
             }
-
-            System.out.println("handles: " + genericHandles.size());
         }
 
 

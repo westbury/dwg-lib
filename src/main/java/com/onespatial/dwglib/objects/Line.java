@@ -7,6 +7,15 @@ import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Line extends EntityObject {
 
+    public Point3D start;
+    public Point3D end;
+    public double thickness;
+    public Point3D extrusion;
+
+    public Line(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 
@@ -18,24 +27,31 @@ public class Line extends EntityObject {
         double endX = dataStream.getDD(startX);
         double startY = dataStream.getRD();
         double endY = dataStream.getDD(startY);
-        if (!zAreZero) {
-            double startZ = dataStream.getRD();
-            double endZ = dataStream.getDD(startZ);
+        double startZ;
+        double endZ;
+        if (zAreZero) {
+            startZ = 0;
+            endZ = 0;
+        } else {
+            startZ = dataStream.getRD();
+            endZ = dataStream.getDD(startZ);
         }
-
-        double thickness = dataStream.getBT();
-        Point3D extrusion = dataStream.getBE();
+        start = new Point3D(startX, startY, startZ);
+        end = new Point3D(endX, endY, endZ);
+        
+        thickness = dataStream.getBT();
+        extrusion = dataStream.getBE();
 
         // Read all handles (until we figure out what they are)
 
-        try {
-            do {
-                Handle referencedHandle = handleStream.getHandle(handleOfThisObject);
-                genericHandles.add(referencedHandle);
-            } while (true);
-        } catch (RuntimeException e) {
-
-        }
+//        try {
+//            do {
+//                Handle referencedHandle = handleStream.getHandle(handleOfThisObject);
+//                genericHandles.add(referencedHandle);
+//            } while (true);
+//        } catch (RuntimeException e) {
+//
+//        }
 
 
         handleStream.advanceToByteBoundary();

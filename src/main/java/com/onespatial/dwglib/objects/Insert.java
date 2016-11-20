@@ -20,6 +20,10 @@ public class Insert extends EntityObject {
     public List<Handle> ownedObjectHandles;
     public Handle seqEndHandle;
 
+    public Insert(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.9 INSERT (7) page 111    

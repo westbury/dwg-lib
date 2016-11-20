@@ -1,8 +1,12 @@
 package com.onespatial.dwglib.objects;
 
-public class Endblk extends NonEntityObject {
+public class Endblk extends EntityObject {
 
-	public String toString() {
+	public Endblk(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
+    public String toString() {
 		return "ENDBLK";
 	}
 

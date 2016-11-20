@@ -5,6 +5,10 @@ import com.onespatial.dwglib.bitstreams.BitBuffer;
 
 public class Style extends NonEntityObject {
 
+    public Style(ObjectMap objectMap) {
+        super(objectMap);
+    }
+
     @Override
 	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.54 SHAPEFILE (53)
