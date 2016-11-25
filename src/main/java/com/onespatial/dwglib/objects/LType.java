@@ -44,13 +44,21 @@ public class LType extends NonEntityObject {
         }
 
         public CadObject getShapefileForDash() {
-            CadObject result = objectMap.parseObject(shapefileForDashHandle);
-            return (CadObject) result;
+            if (shapefileForDashHandle == null) {
+                return null;
+            } else {
+                CadObject result = objectMap.parseObjectPossiblyNull(shapefileForDashHandle);
+                return (CadObject) result;
+            }
         }
 
         public CadObject getShapefileForShape() {
-            CadObject result = objectMap.parseObject(shapefileForShapeHandle);
-            return (CadObject) result;
+            if (shapefileForShapeHandle == null) {
+                return null;
+            } else {
+                CadObject result = objectMap.parseObjectPossiblyNull(shapefileForShapeHandle);
+                return (CadObject) result;
+            }
         }
     }
 

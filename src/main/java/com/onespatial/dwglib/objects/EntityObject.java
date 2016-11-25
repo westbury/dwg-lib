@@ -8,10 +8,10 @@ import com.onespatial.dwglib.bitstreams.Handle;
 public abstract class EntityObject extends CadObject {
 
     public Handle parentHandle;
-    public Handle layerHandle;
+    private Handle layerHandle;
     private Handle linetypeHandle;
-    public Handle materialHandle;
-    public Handle plotstyleHandle;
+    private Handle materialHandle;
+    private Handle plotstyleHandle;
 
     public EntityObject(ObjectMap objectMap) {
         super(objectMap);
@@ -64,8 +64,10 @@ public abstract class EntityObject extends CadObject {
         // TODO This needs more investigation.
 
 //        xDicMissingFlag = dataStream.getB();
+        
+        boolean hasBinaryData = false;
         if (fileVersion.is2013OrLater()) {
-            boolean hasBinaryData = dataStream.getB();
+            hasBinaryData = dataStream.getB();
         }
         boolean areLinkersPresent = dataStream.getB();
         CmColor entityColor = dataStream.getENC();
@@ -92,14 +94,24 @@ public abstract class EntityObject extends CadObject {
             reactorHandles[i] = reactorHandle;
         }
 
-        // These seem to be not present???
-//        if (!xDicMissingFlag) {
-//            Handle xdicobjhandle = handleStream.getHandle();
-//        }
-//        
-//        Handle colorBookColorHandle = handleStream.getHandle();
+        // Correct for 2013, may not be correct for 2010... 
+        boolean xDicMissingFlag = hasBinaryData;
+        if (!xDicMissingFlag) {
+            Handle xdicobjhandle = handleStream.getHandle();
+        }
         
+        // This seems to not be present???
+//        Handle colorBookColorHandle = handleStream.getHandle();
+            
         layerHandle = handleStream.getHandle();
+        CadObject myLayer = objectMap.parseObject(layerHandle);
+        if (myLayer instanceof Dictionary) {
+            // try next handle
+            layerHandle = handleStream.getHandle();
+            CadObject myLayer2 = objectMap.parseObject(layerHandle);
+            System.out.println("  layer is " + myLayer2.toString());
+        }
+        
         if (linetypeFlag == 3) {
             linetypeHandle = handleStream.getHandle();
         }
@@ -111,6 +123,15 @@ public abstract class EntityObject extends CadObject {
         }
         
         readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
+    }
+
+    public Layer getLayer()
+    {
+        CadObject result = objectMap.parseObject(layerHandle);
+        if (this instanceof Insert && result instanceof Dictionary) {
+            return null;
+        }
+        return (Layer) result;
     }
 
     public LType getLinetype() {

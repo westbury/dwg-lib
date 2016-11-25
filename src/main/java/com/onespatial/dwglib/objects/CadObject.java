@@ -190,8 +190,12 @@ public abstract class CadObject {
             @Override
             public CadObject get(int index)
             {
-                CadObject result = objectMap.parseObject(reactorHandles[index]);
-                return result;
+                if (reactorHandles[index] == null) {
+                    return null;
+                } else {
+                    CadObject result = objectMap.parseObject(reactorHandles[index]);
+                    return result;
+                }
             }
 
             @Override
@@ -232,7 +236,7 @@ public abstract class CadObject {
 
                             @Override
                             public java.util.Map.Entry<Appid, Object[]> next() {
-                                java.util.Map.Entry<Handle, Object[]> e = iter.next();
+                                final java.util.Map.Entry<Handle, Object[]> e = iter.next();
                                 return new java.util.Map.Entry<Appid, Object[]>() {
 
                                     @Override
@@ -247,9 +251,14 @@ public abstract class CadObject {
 
                                     @Override
                                     public Object[] setValue(Object[] arg0) {
-                                        // TODO Auto-generated method stub
-                                        return null;
+                                        throw new UnsupportedOperationException();
                                     }};
+                            }
+
+                            @Override
+                            public void remove()
+                            {
+                                throw new UnsupportedOperationException();
                             }
                         };
                     }

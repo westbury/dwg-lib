@@ -55,6 +55,10 @@ public class SortEntsTable extends NonEntityObject {
                 CadObject result = objectMap.parseObject(sortHandles[index]);
                 return (CadObject) result;
                 } catch (Exception e) {
+                    /*
+                     * The sort values may contain handles that actually do not exist any more
+                     * in the handle table.
+                     */
                     return null;
                     
                 }

@@ -55,7 +55,7 @@ public class LTypeControlObj extends NonEntityObject {
             @Override
             public LType get(int index)
             {
-                return (LType)objectMap.parseObject(lineTypeHandles[index]);
+                return (LType)objectMap.parseObjectPossiblyNull(lineTypeHandles[index]);
             }
 
             @Override

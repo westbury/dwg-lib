@@ -15,23 +15,33 @@ import org.junit.Test;
 import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point3D;
 import com.onespatial.dwglib.objects.AcdbDictionaryWithDefault;
-import com.onespatial.dwglib.objects.AcdbPlaceHolder;
 import com.onespatial.dwglib.objects.Appid;
 import com.onespatial.dwglib.objects.AppidControlObj;
+import com.onespatial.dwglib.objects.Arc;
 import com.onespatial.dwglib.objects.Attdef;
 import com.onespatial.dwglib.objects.Attrib;
+import com.onespatial.dwglib.objects.BlockControlObj;
 import com.onespatial.dwglib.objects.BlockHeader;
 import com.onespatial.dwglib.objects.CadObject;
+import com.onespatial.dwglib.objects.Circle;
 import com.onespatial.dwglib.objects.Dictionary;
 import com.onespatial.dwglib.objects.EntityObject;
+import com.onespatial.dwglib.objects.Insert;
 import com.onespatial.dwglib.objects.LType;
 import com.onespatial.dwglib.objects.LTypeControlObj;
 import com.onespatial.dwglib.objects.Layer;
 import com.onespatial.dwglib.objects.LayerControlObj;
 import com.onespatial.dwglib.objects.Layout;
+import com.onespatial.dwglib.objects.Line;
 import com.onespatial.dwglib.objects.LwPolyline;
 import com.onespatial.dwglib.objects.LwPolyline.VertexOfLwPolyline;
+import com.onespatial.dwglib.objects.MText;
+import com.onespatial.dwglib.objects.Point;
+import com.onespatial.dwglib.objects.PolylineMesh;
+import com.onespatial.dwglib.objects.PolylinePFace;
 import com.onespatial.dwglib.objects.SortEntsTable;
+import com.onespatial.dwglib.objects.Text;
+import com.onespatial.dwglib.objects.TwoDPolyline;
 
 public class TraversalTest {
 
@@ -60,97 +70,132 @@ public class TraversalTest {
 
     @Test
     public void traversalTest() throws Exception {
-        Reader reader = new Reader(testFile);
-
-        LayerControlObj layerControl = reader.getLayerControlObject();
-
-        for (Layer layer : layerControl.getLayers()) {
-            AcdbPlaceHolder placeHolder = layer.getPlotStyle();
-
-            for (CadObject placeHolderReactor : placeHolder.getReactors()) {
-                if (placeHolderReactor instanceof AcdbDictionaryWithDefault) {
-
-                    for (CadObject dictReactor : placeHolderReactor.getReactors()) {
-                        if (dictReactor instanceof Dictionary) {
-                            Dictionary dict = (Dictionary)dictReactor;
-                            Dictionary dict2 = (Dictionary)dict.lookupObject("ACAD_LAYOUT");
-                            CadObject model = dict2.lookupObject("Model");
-                            Layout layout = (Layout)model;
-
-                            BlockHeader blockHeader = layout.getPaperspaceBlockRecord();
-                            Dictionary dict3 = blockHeader.getXDictionary();
-                            if (dict3 != null) {
-                                SortEntsTable table = (SortEntsTable)dict3.lookupObject("ACAD_SORTENTS");
-                                for (CadObject entity : table.getEntities()) {
-                                    if (entity instanceof LwPolyline) {
-                                        LwPolyline polyline = (LwPolyline)entity;
-
-                                        System.out.print("    LwPolyline: ");
-                                        for (VertexOfLwPolyline point : polyline.points) {
-                                            System.out.print(" " + point.vertex);
-                                        }
-                                        System.out.println("");
-                                    }
-                                }
-                            }
-                        }
-                    }
+        try (Reader reader = new Reader(testFile)) {
+            BlockControlObj blockControl = reader.getBlockControlObject();
+            BlockHeader ms = (BlockHeader)blockControl.getModelSpace();
+            if (ms != null) {
+                for (CadObject entity : ms.getOwnedObjects()) {
+                    traceEntity("", (EntityObject)entity, null);
                 }
             }
         }
     }
 
+    static Layer previousLayer = null;
+
+    private void traceEntity(String indent, EntityObject entity, Layer parentLayer)
+    {
+        Layer layer = entity.getLayer();
+        if (layer.entryName.equals("0")) {
+            // Block layer, so inherit from parent
+            if (parentLayer == null) {
+                throw new RuntimeException("Can't have '0' layer entity at top-level.");
+            }
+            layer = parentLayer;
+        } else {
+            /*
+             * Generally blocks have entities defined in layer '0'.
+             * Occasionally the entities are in another layer. If a block
+             * has its entities defined in the '0' layer then for most uses
+             * one probably wants to expand the entities into the layer into
+             * which the insert occurs.
+             */
+            if (layer != previousLayer) {
+                System.out.println("Layer: " + (layer == null ? "null" : layer.entryName));
+                previousLayer = layer;
+            }
+        }
+
+        if (entity instanceof Point) {
+            Point point = (Point)entity;
+            System.out.println(indent + "    Point: " + point.point);
+        } else if (entity instanceof Line) {
+            Line line = (Line)entity;
+            System.out.println(indent + "    Line: " + line.start + " to " + line.end);
+        } else if (entity instanceof LwPolyline) {
+            LwPolyline polyline = (LwPolyline)entity;
+
+            System.out.print(indent + "    LwPolyline: ");
+            for (VertexOfLwPolyline point : polyline.points) {
+                System.out.print(" " + point.vertex);
+            }
+            System.out.println("");
+        } else if (entity instanceof Arc) {
+            Arc arc = (Arc)entity;
+            System.out.println(indent + "    Arc: " + arc.center + " with radius " + arc.radius + ", angle " + arc.startAngle + " to " + arc.endAngle);
+        } else if (entity instanceof Circle) {
+            Circle arc = (Circle)entity;
+            System.out.println(indent + "    Circle: " + arc.center + " with radius " + arc.radius);
+        } else if (entity instanceof TwoDPolyline) {
+            TwoDPolyline polyline = (TwoDPolyline)entity;
+            System.out.println(indent + "    2D Polyline: " + polyline.getOwnedObjects().size() + " vertexes");
+        } else if (entity instanceof Text) {
+            Text textObject = (Text)entity;
+            System.out.println(indent + "    Text: " + textObject.textValue);
+        } else if (entity instanceof Insert) {
+            Insert insert = (Insert)entity;
+            BlockHeader block = insert.getBlockHeader();
+            System.out.println(indent + "    Insert block " + block.entryName + ": scale is (" + insert.xScaleFactor + ", " + insert.yScaleFactor + "), rotation is " + insert.rotation);
+
+            for (EntityObject child : block.getOwnedObjects()) {
+                traceEntity("    " + indent, child, layer);
+            }
+        } else {
+            System.out.println(indent + "    " + entity.getClass().getSimpleName());
+        }
+    }
+
     @Test
     public void traverseEverythingTest() throws Exception {
-        Reader reader = new Reader(testFile);
+        try (Reader reader = new Reader(testFile)) {
+            Map<String, CadObject> rootObjects = new HashMap<>();
+            rootObjects.put("CLAYER", reader.getCLayer()); 
+            rootObjects.put("TEXTSTYLE", reader.getTextStyle()); 
+            rootObjects.put("CELTYPE", reader.getCelType()); 
+            rootObjects.put("CMATERIAL", reader.getCMaterial()); 
+            rootObjects.put("DIMSTYLE", reader.getDimStyle()); 
+            rootObjects.put("CMLSTYLE", reader.getCmlStyle()); 
+            rootObjects.put("DIMTXSTY", reader.getDimTxSty()); 
+            rootObjects.put("DIMLDRBLK", reader.getDimLdrBlk()); 
+            rootObjects.put("DIMBLK", reader.getDimBlk()); 
+            rootObjects.put("DIMBLK1", reader.getDimBlk1()); 
+            rootObjects.put("DIMBLK2", reader.getDimBlk2()); 
+            rootObjects.put("DIMLTYPE", reader.getDimLType()); 
+            rootObjects.put("DIMLTEX1", reader.getDimLTex1()); 
+            rootObjects.put("DIMLTEX2", reader.getDimLTex2()); 
+            rootObjects.put("BLOCK_CONTROL_OBJECT", reader.getBlockControlObject()); 
+            rootObjects.put("LAYER_CONTROL_OBJECT", reader.getLayerControlObject()); 
+            rootObjects.put("STYLE_CONTROL_OBJECT", reader.getStyleControlObject()); 
+            rootObjects.put("LINETYPE_CONTROL_OBJECT", reader.getLinetypeControlObject()); 
+            rootObjects.put("VIEW_CONTROL_OBJECT", reader.getViewControlObject()); 
+            rootObjects.put("UCS_CONTROL_OBJECT", reader.getUcsControlObject()); 
+            rootObjects.put("VPORT_CONTROL_OBJECT", reader.getVPortControlObject()); 
+            rootObjects.put("APPID_CONTROL_OBJECT", reader.getAppidControlObject()); 
+            rootObjects.put("DIMSTYLE_CONTROL_OBJECT", reader.getDimStyleControlObject()); 
+            rootObjects.put("DICTIONARY_ACAD_GROUP", reader.getDictionaryAcadGroup()); 
+            rootObjects.put("DICTIONARY_ACAD_MLINESTYLE", reader.getDictionaryAcadMLineStyle()); 
+            rootObjects.put("DICTIONARY_NAMED_OBJECTS", reader.getDictionaryNamedObjects()); 
+            rootObjects.put("DICTIONARY_LAYOUTS", reader.getDictionaryLayouts()); 
+            rootObjects.put("DICTIONARY_PLOTSETTINGS", reader.getDictionaryPlotsettings()); 
+            rootObjects.put("DICTIONARY_PLOTSTYLES", reader.getDictionaryPlotstyles()); 
+            rootObjects.put("DICTIONARY_MATERIALS", reader.getDictionaryMaterials()); 
+            rootObjects.put("DICTIONARY_COLORS", reader.getDictionaryColors()); 
+            rootObjects.put("DICTIONARY_VISUALSTYLE", reader.getDictionaryVisualstyle()); 
+            rootObjects.put("UNKNOWN", reader.getUnknown()); 
+            rootObjects.put("CPSNID", reader.getCpsnid()); 
+            rootObjects.put("BLOCK_RECORD_PAPER_SPACE", reader.getBlockRecordPaperSpace()); 
+            rootObjects.put("BLOCK_RECORD_MODEL_SPACE", reader.getBlockRecordModelSpace()); 
+            rootObjects.put("LTYPE_BYLAYER", reader.getLTypeByLayer()); 
+            rootObjects.put("LTYPE_BYBLOCK", reader.getLTypeByBlock()); 
+            rootObjects.put("LTYPE_CONTINUOUS", reader.getLTypeContinuous()); 
+            rootObjects.put("INTERFEREOBJVS", reader.getInterfereObjvs()); 
+            rootObjects.put("INTERFEREVPVS", reader.getInterfereVpvs()); 
+            rootObjects.put("DRAGVS", reader.getDragvs());
 
-        Map<String, CadObject> rootObjects = new HashMap<>();
-        rootObjects.put("CLAYER", reader.getCLayer()); 
-        rootObjects.put("TEXTSTYLE", reader.getTextStyle()); 
-        rootObjects.put("CELTYPE", reader.getCelType()); 
-        rootObjects.put("CMATERIAL", reader.getCMaterial()); 
-        rootObjects.put("DIMSTYLE", reader.getDimStyle()); 
-        rootObjects.put("CMLSTYLE", reader.getCmlStyle()); 
-        rootObjects.put("DIMTXSTY", reader.getDimTxSty()); 
-        rootObjects.put("DIMLDRBLK", reader.getDimLdrBlk()); 
-        rootObjects.put("DIMBLK", reader.getDimBlk()); 
-        rootObjects.put("DIMBLK1", reader.getDimBlk1()); 
-        rootObjects.put("DIMBLK2", reader.getDimBlk2()); 
-        rootObjects.put("DIMLTYPE", reader.getDimLType()); 
-        rootObjects.put("DIMLTEX1", reader.getDimLTex1()); 
-        rootObjects.put("DIMLTEX2", reader.getDimLTex2()); 
-        rootObjects.put("BLOCK_CONTROL_OBJECT", reader.getBlockControlObject()); 
-        rootObjects.put("LAYER_CONTROL_OBJECT", reader.getLayerControlObject()); 
-        rootObjects.put("STYLE_CONTROL_OBJECT", reader.getStyleControlObject()); 
-        rootObjects.put("LINETYPE_CONTROL_OBJECT", reader.getLinetypeControlObject()); 
-        rootObjects.put("VIEW_CONTROL_OBJECT", reader.getViewControlObject()); 
-        rootObjects.put("UCS_CONTROL_OBJECT", reader.getUcsControlObject()); 
-        rootObjects.put("VPORT_CONTROL_OBJECT", reader.getVPortControlObject()); 
-        rootObjects.put("APPID_CONTROL_OBJECT", reader.getAppidControlObject()); 
-        rootObjects.put("DIMSTYLE_CONTROL_OBJECT", reader.getDimStyleControlObject()); 
-        rootObjects.put("DICTIONARY_ACAD_GROUP", reader.getDictionaryAcadGroup()); 
-        rootObjects.put("DICTIONARY_ACAD_MLINESTYLE", reader.getDictionaryAcadMLineStyle()); 
-        rootObjects.put("DICTIONARY_NAMED_OBJECTS", reader.getDictionaryNamedObjects()); 
-        rootObjects.put("DICTIONARY_LAYOUTS", reader.getDictionaryLayouts()); 
-        rootObjects.put("DICTIONARY_PLOTSETTINGS", reader.getDictionaryPlotsettings()); 
-        rootObjects.put("DICTIONARY_PLOTSTYLES", reader.getDictionaryPlotstyles()); 
-        rootObjects.put("DICTIONARY_MATERIALS", reader.getDictionaryMaterials()); 
-        rootObjects.put("DICTIONARY_COLORS", reader.getDictionaryColors()); 
-        rootObjects.put("DICTIONARY_VISUALSTYLE", reader.getDictionaryVisualstyle()); 
-        rootObjects.put("UNKNOWN", reader.getUnknown()); 
-        rootObjects.put("CPSNID", reader.getCpsnid()); 
-        rootObjects.put("BLOCK_RECORD_PAPER_SPACE", reader.getBlockRecordPaperSpace()); 
-        rootObjects.put("BLOCK_RECORD_MODEL_SPACE", reader.getBlockRecordModelSpace()); 
-        rootObjects.put("LTYPE_BYLAYER", reader.getLTypeByLayer()); 
-        rootObjects.put("LTYPE_BYBLOCK", reader.getLTypeByBlock()); 
-        rootObjects.put("LTYPE_CONTINUOUS", reader.getLTypeContinuous()); 
-        rootObjects.put("INTERFEREOBJVS", reader.getInterfereObjvs()); 
-        rootObjects.put("INTERFEREVPVS", reader.getInterfereVpvs()); 
-        rootObjects.put("DRAGVS", reader.getDragvs());
-
-        for (String rootObjectName : rootObjects.keySet()) {
-            CadObject cadObject = rootObjects.get(rootObjectName);
-            parseAndPrintPossiblyNull(rootObjectName, cadObject, "");
+            for (String rootObjectName : rootObjects.keySet()) {
+                CadObject cadObject = rootObjects.get(rootObjectName);
+                parseAndPrintPossiblyNull(rootObjectName, cadObject, "");
+            }
         }
     }        
 
@@ -179,6 +224,7 @@ public class TraversalTest {
 
         if (cadObject instanceof EntityObject) {
             EntityObject entity = (EntityObject)cadObject;
+            parseAndPrint("Layer", entity.getLayer(), indent);
             LType linetype = entity.getLinetype();
             if (linetype != null) {
                 parseAndPrint("Line Type", linetype, indent);
@@ -200,7 +246,7 @@ public class TraversalTest {
             parseAndPrint("External Ref Block", appid.getExternalRefBlock(), indent);
         }
         break;
-            
+
         case "AppidControlObj":
         {
             AppidControlObj appidControlObj = (AppidControlObj)cadObject;
@@ -239,6 +285,17 @@ public class TraversalTest {
         }
         break;
 
+        case "BlockControlObj":
+        {
+            BlockControlObj controlObject = (BlockControlObj)cadObject;
+            for (BlockHeader blockHeader : controlObject.getBlockHeaders()) {
+                parseAndPrint("Block Header", blockHeader, indent);
+            }
+            parseAndPrint("Model Space", controlObject.getModelSpace(), indent);
+            parseAndPrint("Paper Space", controlObject.getPaperSpace(), indent);
+        }
+        break;
+
         case "BlockHeader":
         {
             BlockHeader blockHeader = (BlockHeader)cadObject;
@@ -252,6 +309,17 @@ public class TraversalTest {
                 parseAndPrint("Insert", insert, indent);
             }
             parseAndPrint("Layout", blockHeader.getLayout(), indent);
+        }
+        break;
+
+        case "Insert":
+        {
+            Insert insert = (Insert)cadObject;
+            parseAndPrint("Block Header", insert.getBlockHeader(), indent);
+            for (CadObject ownedObject : insert.getOwnedObjects()) {
+                parseAndPrint("Owned Object", ownedObject, indent);
+            }
+            parseAndPrintPossiblyNull("Seq End", insert.getSeqEnd(), indent);
         }
         break;
 
@@ -316,6 +384,43 @@ public class TraversalTest {
             for (CadObject viewport : layout.getViewPorts()) {
                 parseAndPrintObject("Viewport", viewport, indent);
             }
+        }
+        break;
+
+        case "MText":
+        {
+            MText text = (MText)cadObject;
+            parseAndPrintObject("Style", text.getStyle(), indent);
+        }
+        break;
+
+        case "TwoDPolyline":
+        {
+            TwoDPolyline polyline = (TwoDPolyline)cadObject;
+            for (CadObject  ownedObject : polyline.getOwnedObjects()) {
+                parseAndPrintObject("Owned Object", ownedObject, indent);
+            }
+            parseAndPrintPossiblyNull("Seq End", polyline.getSeqEnd(), indent);
+        }
+        break;
+
+        case "PolylinePFace":
+        {
+            PolylinePFace polyline = (PolylinePFace)cadObject;
+            for (CadObject  ownedObject : polyline.getOwnedObjects()) {
+                parseAndPrintObject("Owned Object", ownedObject, indent);
+            }
+            parseAndPrintPossiblyNull("Seq End", polyline.getSeqEnd(), indent);
+        }
+        break;
+
+        case "PolylineMesh":
+        {
+            PolylineMesh polyline = (PolylineMesh)cadObject;
+            for (CadObject  ownedObject : polyline.getOwnedObjects()) {
+                parseAndPrintObject("Owned Object", ownedObject, indent);
+            }
+            parseAndPrintPossiblyNull("Seq End", polyline.getSeqEnd(), indent);
         }
         break;
 

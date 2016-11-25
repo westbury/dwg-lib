@@ -47,12 +47,14 @@ import com.onespatial.dwglib.objects.Block;
 import com.onespatial.dwglib.objects.BlockControlObj;
 import com.onespatial.dwglib.objects.BlockHeader;
 import com.onespatial.dwglib.objects.CadObject;
+import com.onespatial.dwglib.objects.Circle;
 import com.onespatial.dwglib.objects.Dictionary;
 import com.onespatial.dwglib.objects.DimStyle;
 import com.onespatial.dwglib.objects.DimensionLinear;
 import com.onespatial.dwglib.objects.DimstyleControlObj;
 import com.onespatial.dwglib.objects.Endblk;
 import com.onespatial.dwglib.objects.GenericObject;
+import com.onespatial.dwglib.objects.Hatch;
 import com.onespatial.dwglib.objects.Insert;
 import com.onespatial.dwglib.objects.LType;
 import com.onespatial.dwglib.objects.LTypeControlObj;
@@ -62,8 +64,12 @@ import com.onespatial.dwglib.objects.Layout;
 import com.onespatial.dwglib.objects.Line;
 import com.onespatial.dwglib.objects.LwPolyline;
 import com.onespatial.dwglib.objects.MLineStyle;
+import com.onespatial.dwglib.objects.MText;
 import com.onespatial.dwglib.objects.ObjectMap;
 import com.onespatial.dwglib.objects.Point;
+import com.onespatial.dwglib.objects.PolylineMesh;
+import com.onespatial.dwglib.objects.PolylinePFace;
+import com.onespatial.dwglib.objects.SeqEnd;
 import com.onespatial.dwglib.objects.Solid;
 import com.onespatial.dwglib.objects.SortEntsTable;
 import com.onespatial.dwglib.objects.Style;
@@ -75,6 +81,7 @@ import com.onespatial.dwglib.objects.Ucs;
 import com.onespatial.dwglib.objects.UcsControlObj;
 import com.onespatial.dwglib.objects.VPort;
 import com.onespatial.dwglib.objects.VPortControlObj;
+import com.onespatial.dwglib.objects.Vertex2D;
 import com.onespatial.dwglib.objects.View;
 import com.onespatial.dwglib.objects.ViewControlObj;
 import com.onespatial.dwglib.objects.ViewPort;
@@ -86,7 +93,7 @@ import com.onespatial.dwglib.objects.XRecord;
  *
  * @author Nigel Westbury
  */
-public class Reader {
+public class Reader implements AutoCloseable {
 
 	private Issues issues = new Issues();
 
@@ -296,8 +303,14 @@ public class Reader {
 			case 5:
 				cadObject = new Endblk(objectMap);
 				break;
+            case 6:
+                cadObject = new SeqEnd(objectMap);
+                break;
             case 7:
                 cadObject = new Insert(objectMap);
+                break;
+            case 10:
+                cadObject = new Vertex2D(objectMap);
                 break;
             case 15:
                 cadObject = new TwoDPolyline(objectMap);
@@ -305,6 +318,9 @@ public class Reader {
 			case 17:
 				cadObject = new Arc(objectMap);
 				break;
+            case 18:
+                cadObject = new Circle(objectMap);
+                break;
             case 19:
                 cadObject = new Line(objectMap);
                 break;
@@ -313,6 +329,12 @@ public class Reader {
                 break;
             case 27:
                 cadObject = new Point(objectMap);
+                break;
+            case 29:
+                cadObject = new PolylinePFace(objectMap);
+                break;
+            case 30:
+                cadObject = new PolylineMesh(objectMap);
                 break;
             case 31:
                 cadObject = new Solid(objectMap);
@@ -326,6 +348,9 @@ public class Reader {
 			case 42:
 				cadObject = new Dictionary(objectMap);
 				break;
+            case 44:
+                cadObject = new MText(objectMap);
+                break;
 			case 48:
 				cadObject = new BlockControlObj(objectMap);
 				break;
@@ -386,6 +411,9 @@ public class Reader {
 			case 77:
 				cadObject = new LwPolyline(objectMap);
 				break;
+            case 78:
+                cadObject = new Hatch(objectMap);
+                break;
 			case 79:
 				cadObject = new XRecord(objectMap);
 				break;
@@ -961,9 +989,9 @@ public class Reader {
         return (CadObject)result;
    }
 
-    public CadObject getBlockControlObject() {
+    public BlockControlObj getBlockControlObject() {
         CadObject result = this.parseObject(header.BLOCK_CONTROL_OBJECT.get());
-        return (CadObject)result;
+        return (BlockControlObj)result;
     }
 
     public CadObject getStyleControlObject() {
@@ -1050,13 +1078,13 @@ public class Reader {
         if (header.UNKNOWN.get() == null) {
             return null;
         } else {
-            CadObject result = this.parseObject(header.UNKNOWN.get());
+            CadObject result = objectMap.parseObjectPossiblyNull(header.UNKNOWN.get());
             return (CadObject)result;
         }
     }
 
     public CadObject getCpsnid() {
-        if (header.UNKNOWN.get() == null) {
+        if (header.CPSNID.get() == null) {
             return null;
         } else {
             CadObject result = this.parseObject(header.CPSNID.get());
@@ -1102,6 +1130,13 @@ public class Reader {
     public CadObject getDragvs() {
         CadObject result = objectMap.parseObjectPossiblyNull(header.DRAGVS.get());
         return (CadObject)result;
+    }
+
+    @Override
+    public void close() throws Exception
+    {
+        // TODO Auto-generated method stub
+        
     }
 
 }

@@ -132,15 +132,15 @@ public class BlockHeader extends NonEntityObject {
         }
     }
 
-    public List<CadObject> getOwnedObjects()
+    public List<EntityObject> getOwnedObjects()
     {
-        return new AbstractList<CadObject>() {
+        return new AbstractList<EntityObject>() {
 
             @Override
-            public CadObject get(int index)
+            public EntityObject get(int index)
             {
                 CadObject result = objectMap.parseObject(ownedObjectHandles[index]);
-                return (CadObject) result;
+                return (EntityObject) result;
             }
 
             @Override
@@ -173,8 +173,9 @@ public class BlockHeader extends NonEntityObject {
         }
         return result;
     }
+
     public CadObject getLayout() {
-        CadObject result = objectMap.parseObject(layoutHandle);
+        CadObject result = objectMap.parseObjectPossiblyNull(layoutHandle);
         return (CadObject) result;
     }
 

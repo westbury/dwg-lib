@@ -2,7 +2,6 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
-import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Line extends EntityObject {
