@@ -2,10 +2,91 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point2D;
 import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Hatch extends EntityObject {
+
+    public static class PolylinePathSegment
+    {
+        public Point2D pt0;
+        public double bulge;
+    }
+
+    public class PolylinePath extends Path
+    {
+        public boolean bulgesPresent;
+        public boolean closed;
+        public PolylinePathSegment[] pathSegments;
+
+        @Override
+        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion)
+        {
+            bulgesPresent = dataStream.getB();
+            closed = dataStream.getB();
+            int numPathSegs = dataStream.getBL();
+            pathSegments = new PolylinePathSegment[numPathSegs];
+            for (int j = 0; j < numPathSegs; j++) {
+                pathSegments[j].pt0 = dataStream.get2RD();
+                if (bulgesPresent) {
+                    pathSegments[j].bulge = dataStream.getBD();
+                }
+            }
+            
+            super.readBoundaryItemCountAndHandles(dataStream, handleStream);
+        }
+    }
+
+    public class SegmentedPath extends Path
+    {
+        public PathType[] pathSegments;
+
+        @Override
+        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion)
+        {
+            int numPathSegs = dataStream.getBL();
+            pathSegments = new PathType[numPathSegs];
+            for (int j = 0; j < numPathSegs; j++) {
+                int pathTypeStatus = dataStream.getRC();
+                switch (pathTypeStatus) {
+                case 1: // LINE
+                    pathSegments[j] = new LinePathType();
+                    break;
+                case 2: // CIRCULAR ARC
+                    pathSegments[j] = new CircularArcPathType();
+                    break;
+                case 3: // ELIPTICAL ARC
+                    pathSegments[j] = new ElipticalArcPathType();
+                    break;
+                case 4: // SPLINE
+                    pathSegments[j] = new SplinePathType();
+                    break;
+                    default:
+                        throw new RuntimeException("unexpected case");
+                }
+                
+                pathSegments[j].readFromDataStream(dataStream, fileVersion);
+            }
+            
+            super.readBoundaryItemCountAndHandles(dataStream, handleStream);
+        }
+    }
+
+    public abstract class Path
+    {
+        private Handle[] boundaryObjHandles;
+
+        public abstract void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion);
+        
+        public void readBoundaryItemCountAndHandles(BitBuffer dataStream, BitBuffer handleStream) {
+            int numboundaryobjhandles = dataStream.getBL();
+            boundaryObjHandles = new Handle[numboundaryobjhandles];
+            for (int i = 0; i < numboundaryobjhandles; i++) {
+                boundaryObjHandles[i] = handleStream.getHandle(handleOfThisObject);
+            }
+        }
+    }
 
     public static class DefLine {
 
@@ -32,7 +113,7 @@ public class Hatch extends EntityObject {
         public Point2D pt0;
         public double scaleOrSpacing;
         public boolean doubleHatch;
-        private DefLine[] defLines;
+        public DefLine[] defLines;
 
         public void readFromDataStream(BitBuffer dataStream) {
             angle = dataStream.getBD();
@@ -50,10 +131,10 @@ public class Hatch extends EntityObject {
     }
 
     public static class GradientColor {
-        double unknownDouble;
-        int unknownShort;
-        int rgbColor;
-        int ignoredColorByte;
+        public double unknownDouble;
+        public int unknownShort;
+        public int rgbColor;
+        public int ignoredColorByte;
     }
 
     public static class ControlPoint {
@@ -160,17 +241,18 @@ public class Hatch extends EntityObject {
     public double gradientShift;
     public int singleColorGradient;
     public double gradientTint;
-    private GradientColor[] gradientColors;
+    public GradientColor[] gradientColors;
     public String gradientName;
     public double zCoordinate;
     public Point3D extrusion2;
     public String name;
     public boolean associative;
+    public Path[] paths;
     public int style;
     public int patternType;
+    public Fill fill;
     public double pixelSize;
-    private Point2D[] seedPoints;
-    private Fill fill;
+    public Point2D[] seedPoints;
 
     public Hatch(ObjectMap objectMap) {
         super(objectMap);
@@ -205,51 +287,26 @@ public class Hatch extends EntityObject {
         boolean pixelSizePresent = false;
         
         int numPaths = dataStream.getBL();
+        paths = new Path[numPaths];
         for (int i = 0; i < numPaths; i++) {
             int pathFlag = dataStream.getBL();
             if ((pathFlag & 0x02) == 0) {
-                int numPathSegs = dataStream.getBL();
-                for (int j = 0; j < numPathSegs; j++) {
-                    int pathTypeStatus = dataStream.getRC();
-                    PathType pathType;
-                    switch (pathTypeStatus) {
-                    case 1: // LINE
-                        pathType = new LinePathType();
-                        break;
-                    case 2: // CIRCULAR ARC
-                        pathType = new CircularArcPathType();
-                        break;
-                    case 3: // ELIPTICAL ARC
-                        pathType = new ElipticalArcPathType();
-                        break;
-                    case 4: // SPLINE
-                        pathType = new SplinePathType();
-                        break;
-                        default:
-                            throw new RuntimeException("unexpected case");
-                    }
-                    
-                    pathType.readFromDataStream(dataStream, fileVersion);
-                    
-                }
+                paths[i] = new SegmentedPath();
             } else {
                 // Polyline path
-                boolean bulgesPresent = dataStream.getB();
-                boolean closed = dataStream.getB();
-                int numPathSegs = dataStream.getBL();
-                for (int j = 0; j < numPathSegs; j++) {
-                    Point2D pt0 = dataStream.get2RD();
-                    if (bulgesPresent) {
-                        double bulge = dataStream.getBD();
-                    }
-                }
+                paths[i] = new PolylinePath();
             }
-            
-            int numBoundaryObjHandles = dataStream.getBL();
-            
+
+            paths[i].readFromDataStream(dataStream, handleStream, fileVersion);
+
             pixelSizePresent |= ((pathFlag & 0x04) != 0); 
         }
 
+        // Extra, not documented in spec.
+        // Possibly this is field 97, as test files all have numPaths = 1 so can't distinguish.
+        // known to appear in R27.
+        int unknown = dataStream.getBL();
+        
         style = dataStream.getBS();
         patternType = dataStream.getBS();
         if (!solidFill) {
