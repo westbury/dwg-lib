@@ -272,7 +272,6 @@ public class Reader implements AutoCloseable {
 		if (objectType >= 500) {
 			int classIndex = objectType - 500;
 			ClassData thisClass = classes.get(classIndex);
-			System.out.println("Object Type: " + thisClass.classdxfname);
 
             switch (thisClass.classdxfname) {
             case "ACDBDICTIONARYWDFLT":
@@ -682,12 +681,6 @@ public class Reader implements AutoCloseable {
 				byte[] headerSignature = new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F };
 
 				BitStreams bitStreams = new BitStreams(expandedData, headerSignature, fileVersion);
-				double x = 1.0;
-				long xx = Double.doubleToLongBits(x);
-				for (int k=0; k < 8 ; k++) {
-					System.out.println(xx & 0xFF);
-					xx >>= 8;
-				}
 
 				header = new Header(bitStreams, fileVersion);
 
@@ -718,8 +711,6 @@ public class Reader implements AutoCloseable {
 						lastHandle += handleOffset;
 						lastLoc += locationOffset;
 
-						System.out.println("offset " + handleOffset + "(" + lastHandle + ") = " + locationOffset + "(" + lastLoc + ")");
-
 						section.add(lastHandle, lastLoc);
 					}
 
@@ -730,7 +721,6 @@ public class Reader implements AutoCloseable {
 					sectionSize = classesBuffer.getShort();
 				}
 
-				System.out.println("Sections in handle map read");
 			} else if (sectionName.equals("AcDb:AcDbObjects")) {
 				byte[] combinedBuffer = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 

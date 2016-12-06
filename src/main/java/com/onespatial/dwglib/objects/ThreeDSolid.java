@@ -74,7 +74,7 @@ public class ThreeDSolid extends EntityObject {
         } else if (version == 2) {
             // process ACIS file
             
-            StringBuffer header = new StringBuffer();
+            StringBuilder header = new StringBuilder();
             byte [] h2 = new byte[15];
             for (int i = 0; i < 15; i++) {
                 h2[i] = (byte)dataStream.getRC();

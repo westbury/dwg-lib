@@ -16,6 +16,8 @@ public class LwPolyline extends EntityObject {
 
     public Double constantWidth;
 
+    public boolean isClosed;
+    
     public LwPolyline(ObjectMap objectMap) {
         super(objectMap);
     }
@@ -28,10 +30,13 @@ public class LwPolyline extends EntityObject {
         int numberOfPoints;
         int numberOfVariableWidths = 0;
         int numberOfBulges = 0;
-
+        
         if (b1) {
             dataStream.expectB(false);
-
+            
+            // It seems that the polyline is always closed when b1 is set.
+            isClosed = true;
+            
             numberOfPoints = dataStream.getBS();
         } else {
             boolean bit0 = dataStream.getB();
@@ -62,6 +67,8 @@ public class LwPolyline extends EntityObject {
                         throw new RuntimeException("new case");
                     }
 
+                    isClosed = true;
+                    
                     if (hasWidth) {
                         constantWidth = dataStream.getBD();
                         numberOfPoints = dataStream.getBS();
@@ -87,6 +94,8 @@ public class LwPolyline extends EntityObject {
                         numberOfBulges = 0;
                     }
                 } else {
+                    isClosed = false;
+                    
                     constantWidth = dataStream.getBD();
                     numberOfPoints = dataStream.getBS();
 
@@ -111,8 +120,8 @@ public class LwPolyline extends EntityObject {
                     }
                 }
             } else {
-                report(dataStream, 100, 0.0);
-
+                isClosed = false;
+                
                 if (!bit0) {
                     // Actually this path is never hit in the test files.
                     System.out.println("this case fails");
@@ -154,8 +163,6 @@ public class LwPolyline extends EntityObject {
             points.add(new VertexOfLwPolyline(x, y));
         }
 
-        report(dataStream, 100, 0.0);
-
         for (int index = 0; index < numberOfVariableWidths; index++) {
             double startingWidth = dataStream.getBD();
             double endingWidth = dataStream.getBD();
@@ -178,55 +185,6 @@ public class LwPolyline extends EntityObject {
         return "LWPOLYLINE";
     }
     
-    private void report(BitBuffer dataStream, int numberOfUnknownBits, double base)
-    {
-        int start = dataStream.position();
-
-        int p =dataStream.position();
-        for (int i=0; i<numberOfUnknownBits; i++) {
-            try {
-                dataStream.position(p);
-                boolean b = dataStream.getB();
-                System.out.print(" (" + i + ") " +(b ? "1" : "0"));
-                try {
-                    if (i <= numberOfUnknownBits-16) {
-                        dataStream.position(p);
-                        int s = dataStream.getRS();
-                        System.out.print(" : " + s);
-                        if (i <= numberOfUnknownBits-64) {
-                            dataStream.position(p);
-                            double x = dataStream.getRD();
-                            System.out.print(", " + x);
-                        }
-                    }
-                } catch (Exception e) {
-                    System.out.println(" : <16 bit left");
-                }
-
-            } catch (Exception e) {
-                break;
-            }
-
-            try {
-
-                dataStream.position(p);
-                double xu1 = dataStream.getDD(0.0);
-                System.out.print(", from base 0: " + xu1);
-
-                dataStream.position(p);
-                double xu2 = dataStream.getDD(1.0);
-                System.out.print(", from base 1: " + xu2);
-            } catch (Exception e) {
-                System.out.print(", failed");
-            }
-
-            System.out.println("");
-            p++;
-        }
-
-        dataStream.position(start);
-    }
-
     public static class VertexOfLwPolyline {
 
         public final Point2D vertex;
