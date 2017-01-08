@@ -26,205 +26,207 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 
 import com.onespatial.dwglib.FileVersion;
+import com.onespatial.dwglib.Issues;
 
 public class BitStreams {
 
-	private byte[] byteArray;
-	private int dataStreamStart;
-	private int stringStreamStart;
-	private int stringStreamEnd;
-	private int endDataPosition;
-	private int handleStreamEnd;
+    private byte[] byteArray;
+    private Issues issues;
+    private int dataStreamStart;
+    private int stringStreamStart;
+    private int stringStreamEnd;
+    private int endDataPosition;
+    private int handleStreamEnd;
 
-	public BitStreams(byte[] byteArray, byte[] signature, FileVersion fileVersion) {
-		this.byteArray = byteArray;
+    public BitStreams(byte[] byteArray, byte[] signature, FileVersion fileVersion, Issues issues) {
+        this.byteArray = byteArray;
+        this.issues = issues;
 
-		ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
-		byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        ByteBuffer byteBuffer = ByteBuffer.wrap(byteArray);
+        byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
 
-		// The signature
-		byte [] actualSignature = new byte[16];
-		byteBuffer.get(actualSignature);
-		if (!Arrays.equals(actualSignature, signature)) {
-			throw new RuntimeException("bad signature: ");
-		}
+        // The signature
+        byte [] actualSignature = new byte[16];
+        byteBuffer.get(actualSignature);
+        if (!Arrays.equals(actualSignature, signature)) {
+            throw new RuntimeException("bad signature: ");
+        }
 
-		int sizeOfDataArea = byteBuffer.getInt();
-		int unknown75 = byteBuffer.getInt();
-		int totalSizeInBits = byteBuffer.getInt();
+        int sizeOfDataArea = byteBuffer.getInt();
+        int unknown75 = byteBuffer.getInt();
+        int totalSizeInBits = byteBuffer.getInt();
 
-		// Position in bit buffer at same place as where we got to
-		// in the byte buffer.
-		int position = byteBuffer.position();
+        // Position in bit buffer at same place as where we got to
+        // in the byte buffer.
+        int position = byteBuffer.position();
         dataStreamStart = position * 8;
-		
-		endDataPosition = 24*8 + totalSizeInBits;
 
-		/*
-		 * Find the string section. We do this by reading the buffer
-		 * backwards from the end. The size of the string data area is
-		 * stored as either a 15 bit number or a 31 bit number at the
-		 * end of the buffer. Once we have the size, move back from
-		 * there to get the start of the string data area.
-		 */
+        endDataPosition = 24*8 + totalSizeInBits;
 
-		BitBuffer bitBuffer = BitBuffer.wrap(byteArray);
-		identifyStringStream(bitBuffer);
-		
-		handleStreamEnd = byteArray.length * 8;
-	}
+        /*
+         * Find the string section. We do this by reading the buffer
+         * backwards from the end. The size of the string data area is
+         * stored as either a 15 bit number or a 31 bit number at the
+         * end of the buffer. Once we have the size, move back from
+         * there to get the start of the string data area.
+         */
 
-	public BitStreams(byte[] objectBuffer, int byteOffset) {
-		this.byteArray = objectBuffer;
-		
-		ByteBuffer objectsBuffer = ByteBuffer.wrap(objectBuffer);
-		objectsBuffer.order(ByteOrder.LITTLE_ENDIAN);
-		objectsBuffer.position(byteOffset);
+        BitBuffer bitBuffer = BitBuffer.wrap(byteArray, issues);
+        identifyStringStream(bitBuffer);
 
-		int sizeOfObject = getMS(objectsBuffer);
-		int bitSizeOfHandleStream = getUnsignedMC(objectsBuffer);
+        handleStreamEnd = byteArray.length * 8;
+    }
 
-		dataStreamStart = objectsBuffer.position() * 8;
+    public BitStreams(byte[] objectBuffer, int byteOffset, Issues issues) {
+        this.byteArray = objectBuffer;
+        this.issues = issues;
 
-		int bitSizeOfObjectData = sizeOfObject * 8 - bitSizeOfHandleStream;
+        ByteBuffer objectsBuffer = ByteBuffer.wrap(objectBuffer);
+        objectsBuffer.order(ByteOrder.LITTLE_ENDIAN);
+        objectsBuffer.position(byteOffset);
 
-		endDataPosition = dataStreamStart + bitSizeOfObjectData;
+        int sizeOfObject = getMS(objectsBuffer);
+        int bitSizeOfHandleStream = getUnsignedMC(objectsBuffer);
 
-		handleStreamEnd = endDataPosition + bitSizeOfHandleStream;
+        dataStreamStart = objectsBuffer.position() * 8;
 
+        int bitSizeOfObjectData = sizeOfObject * 8 - bitSizeOfHandleStream;
 
-		/*
-		 * Find the string section. We do this by reading the buffer
-		 * backwards from the end. The size of the string data area is
-		 * stored as either a 15 bit number or a 31 bit number at the
-		 * end of the buffer. Once we have the size, move back from
-		 * there to get the start of the string data area.
-		 */
+        endDataPosition = dataStreamStart + bitSizeOfObjectData;
 
-		BitBuffer bitBuffer = BitBuffer.wrap(byteArray);
-		identifyStringStream(bitBuffer);
+        handleStreamEnd = endDataPosition + bitSizeOfHandleStream;
 
 
-	}
+        /*
+         * Find the string section. We do this by reading the buffer
+         * backwards from the end. The size of the string data area is
+         * stored as either a 15 bit number or a 31 bit number at the
+         * end of the buffer. Once we have the size, move back from
+         * there to get the start of the string data area.
+         */
 
-	/**
-	 * Given the position of the end of the combined data and string streams, being also
-	 * the start of the handle stream, we work backwards to identify the start and end of
-	 * the string stream.
-	 * <P>
-	 * <code>stringStreamStart</code> and <code>stringStreamEnd</code> are set by this method.
-	 *  
-	 * @param bitBuffer
-	 */
-	private void identifyStringStream(BitBuffer bitBuffer) {
-		/*
-		 * The last bit indicates if there is a string stream.
-		 * All versions 2007+ have a string stream, and we don't support
-		 * prior versions, so this bit should always be set, except in the
-		 * objects in the objects section where it may not be set.
-		 */
-		int position = endDataPosition;
-		position -= 1;
-		bitBuffer.position(position);
-		boolean endBit = bitBuffer.getB();
-		
-		int strDataSize;
-		
-		if (endBit) {
+        BitBuffer bitBuffer = BitBuffer.wrap(byteArray, issues);
+        identifyStringStream(bitBuffer);
+    }
 
-		position -= 16;
-		bitBuffer.position(position);
-		strDataSize = bitBuffer.getRS();
-		if ((strDataSize & 0x8000) != 0) {
-			position -= 16;
-			bitBuffer.position(position);
-			int hiSize = bitBuffer.getRS();
-			int loSize = -strDataSize;
-			strDataSize = (hiSize << 15) | loSize;
-		}
-		} else {
-			strDataSize = 0;
-		}
-		stringStreamEnd = position;
-		stringStreamStart = position - strDataSize;
-	}
+    /**
+     * Given the position of the end of the combined data and string streams, being also
+     * the start of the handle stream, we work backwards to identify the start and end of
+     * the string stream.
+     * <P>
+     * <code>stringStreamStart</code> and <code>stringStreamEnd</code> are set by this method.
+     *  
+     * @param bitBuffer
+     */
+    private void identifyStringStream(BitBuffer bitBuffer) {
+        /*
+         * The last bit indicates if there is a string stream.
+         * All versions 2007+ have a string stream, and we don't support
+         * prior versions, so this bit should always be set, except in the
+         * objects in the objects section where it may not be set.
+         */
+        int position = endDataPosition;
+        position -= 1;
+        bitBuffer.position(position);
+        boolean endBit = bitBuffer.getB();
 
-	public BitBuffer getDataStream() {
-		BitBuffer dataStream = BitBuffer.wrap(byteArray);
-		dataStream.position(dataStreamStart);
-		dataStream.setEndOffset(stringStreamStart);
-		return dataStream;
-	}
+        int strDataSize;
 
-	public BitBuffer getStringStream() {
-		BitBuffer stringStream = BitBuffer.wrap(byteArray);
-		stringStream.position(stringStreamStart);
-		stringStream.setEndOffset(stringStreamEnd);
-		return stringStream;
-	}
+        if (endBit) {
 
-	public BitBuffer getHandleStream() {
-		BitBuffer handleStream = BitBuffer.wrap(byteArray);
-		handleStream.position(endDataPosition);
-		handleStream.setEndOffset(handleStreamEnd);
-		return handleStream;
-	}
+            position -= 16;
+            bitBuffer.position(position);
+            strDataSize = bitBuffer.getRS();
+            if ((strDataSize & 0x8000) != 0) {
+                position -= 16;
+                bitBuffer.position(position);
+                int hiSize = bitBuffer.getRS();
+                int loSize = -strDataSize;
+                strDataSize = (hiSize << 15) | loSize;
+            }
+        } else {
+            strDataSize = 0;
+        }
+        stringStreamEnd = position;
+        stringStreamStart = position - strDataSize;
+    }
 
-	public static int getMC(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
+    public BitBuffer getDataStream() {
+        BitBuffer dataStream = BitBuffer.wrap(byteArray, issues);
+        dataStream.position(dataStreamStart);
+        dataStream.setEndOffset(stringStreamStart);
+        return dataStream;
+    }
 
-		byte b = buffer.get();
-		while ((b & 0x80) != 0) {
-			int byteValue = (b & 0x7F);
-			result |= (byteValue << shift);
-			shift += 7;
-			b = buffer.get();
-		}
+    public BitBuffer getStringStream() {
+        BitBuffer stringStream = BitBuffer.wrap(byteArray, issues);
+        stringStream.position(stringStreamStart);
+        stringStream.setEndOffset(stringStreamEnd);
+        return stringStream;
+    }
 
-		boolean signBit = (b & 0x40) != 0;
-		int byteValue = (b & 0x3F);
-		result |= (byteValue << shift);
+    public BitBuffer getHandleStream() {
+        BitBuffer handleStream = BitBuffer.wrap(byteArray, issues);
+        handleStream.position(endDataPosition);
+        handleStream.setEndOffset(handleStreamEnd);
+        return handleStream;
+    }
 
-		if (signBit) {
-			result = -result;
-		}
+    public static int getMC(ByteBuffer buffer) {
+        int result = 0;
+        int shift = 0;
 
-		return result;
-	}
+        byte b = buffer.get();
+        while ((b & 0x80) != 0) {
+            int byteValue = (b & 0x7F);
+            result |= (byteValue << shift);
+            shift += 7;
+            b = buffer.get();
+        }
 
-	public static int getUnsignedMC(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
+        boolean signBit = (b & 0x40) != 0;
+        int byteValue = (b & 0x3F);
+        result |= (byteValue << shift);
 
-		boolean highBit;
-		do {
-			byte b = buffer.get();
-			highBit = (b & 0x80) != 0;
-			int byteValue = (b & 0x7F);
-			result |= (byteValue << shift);
-			shift += 7;
-		} while (highBit);
+        if (signBit) {
+            result = -result;
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	public static int getMS(ByteBuffer buffer) {
-		int result = 0;
-		int shift = 0;
+    public static int getUnsignedMC(ByteBuffer buffer) {
+        int result = 0;
+        int shift = 0;
 
-		assert buffer.order() == ByteOrder.LITTLE_ENDIAN;
+        boolean highBit;
+        do {
+            byte b = buffer.get();
+            highBit = (b & 0x80) != 0;
+            int byteValue = (b & 0x7F);
+            result |= (byteValue << shift);
+            shift += 7;
+        } while (highBit);
 
-		boolean highBit;
-		do {
-			short word = buffer.getShort();
-			highBit = (word & 0x8000) != 0;
-			int wordValue = (word & 0x7FFF);
-			result |= (wordValue << shift);
-			shift += 15;
-		} while (highBit);
+        return result;
+    }
 
-		return result;
-	}
+    public static int getMS(ByteBuffer buffer) {
+        int result = 0;
+        int shift = 0;
+
+        assert buffer.order() == ByteOrder.LITTLE_ENDIAN;
+
+        boolean highBit;
+        do {
+            short word = buffer.getShort();
+            highBit = (word & 0x8000) != 0;
+            int wordValue = (word & 0x7FFF);
+            result |= (wordValue << shift);
+            shift += 15;
+        } while (highBit);
+
+        return result;
+    }
 
 }

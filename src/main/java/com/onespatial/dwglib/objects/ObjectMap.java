@@ -1,5 +1,6 @@
 package com.onespatial.dwglib.objects;
 
+import com.onespatial.dwglib.Issues;
 import com.onespatial.dwglib.Reader;
 import com.onespatial.dwglib.bitstreams.Handle;
 
@@ -11,7 +12,10 @@ public class ObjectMap
     public ObjectMap(Reader reader) {
         this.reader = reader;
     }
-    
+ 
+    public Issues getIssues() {
+        return reader.getIssues();
+    }
     public CadObject parseObject(Handle handle)
     {
         return reader.parseObject(handle);

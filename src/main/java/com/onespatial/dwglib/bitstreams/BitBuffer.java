@@ -29,6 +29,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.JulianFields;
 
+import com.onespatial.dwglib.Issues;
+
 /**
  * Reads from a byte array on a bit-by-bit basis.  Methods are being implemented here to
  * read fields as per the formats described in chapter 2, Bit Codes and Data Definitions,
@@ -40,6 +42,8 @@ import java.time.temporal.JulianFields;
 public class BitBuffer {
     private byte[] byteArray;
 
+    private Issues issues;
+    
     private int currentOffset;
 
     private int bitOffset;
@@ -48,8 +52,10 @@ public class BitBuffer {
 
     private int endOffset;
 
-    private BitBuffer(byte[] byteArray) {
+    private BitBuffer(byte[] byteArray, Issues issues) {
         this.byteArray = byteArray;
+        this.issues = issues;
+        
         currentOffset = 0;
         currentByte = byteArray[0];
         bitOffset = 0;
@@ -58,8 +64,8 @@ public class BitBuffer {
         this.endOffset = byteArray.length * 8;
     }
 
-    public static BitBuffer wrap(byte[] byteArray) {
-        return new BitBuffer(byteArray);
+    public static BitBuffer wrap(byte[] byteArray, Issues issues) {
+        return new BitBuffer(byteArray, issues);
     }
 
     public void position(int offset) {
@@ -419,7 +425,7 @@ public class BitBuffer {
     {
         boolean actual = getB();
         if (actual != expected) {
-            throw new RuntimeException("unknown bit value: investigation needed.");
+            issues.addWarning(MessageFormat.format("Unknown bit value: {0} expected but {1} found. Investigation needed.", expected, actual));
         }
     }
 
@@ -427,14 +433,14 @@ public class BitBuffer {
     {
         int actual = getRC();
         if (actual != expected) {
-            throw new RuntimeException(MessageFormat.format("Unknown RC value: {0} expected but {1} found.", expected, actual));
+            issues.addWarning(MessageFormat.format("Unknown RC value: {0} expected but {1} found. Investigation needed.", expected, actual));
         }
     }
 
     public void expectBD(double expected) {
         double actual = getBD();
         if (actual != expected) {
-            throw new RuntimeException();
+            issues.addWarning(MessageFormat.format("Unknown bit-double value: {0} expected but {1} found. Investigation needed.", expected, actual));
         }
     }
 

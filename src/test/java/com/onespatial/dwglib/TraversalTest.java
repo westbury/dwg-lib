@@ -360,13 +360,9 @@ public class TraversalTest {
             LType ltype = (LType)cadObject;
             parseAndPrint("External Reference Block", ltype.getExternalReferenceBlock(), indent);
             for (int i = 0; i < ltype.dashes.length; i++) {
-                CadObject shapefileForDash = ltype.dashes[i].getShapefileForDash();
-                if (shapefileForDash != null) {
-                    parseAndPrint("Dash["+i+"](dash)", shapefileForDash, indent);
-                }
-                CadObject shapefileForShape = ltype.dashes[i].getShapefileForShape();
+                CadObject shapefileForShape = ltype.dashes[i].getShapefileForDash();
                 if (shapefileForShape != null) {
-                    parseAndPrint("Dash["+i+"](shape)", shapefileForShape, indent);
+                    parseAndPrint("Dash["+i+"]", shapefileForShape, indent);
                 }
             }
         }

@@ -95,7 +95,7 @@ public abstract class EntityObject extends CadObject {
         }
 
         // Correct for 2013, may not be correct for 2010... 
-        boolean xDicMissingFlag = hasBinaryData;
+        boolean xDicMissingFlag = hasBinaryData || !fileVersion.is2013OrLater();
         if (!xDicMissingFlag) {
             Handle xdicobjhandle = handleStream.getHandle();
         }

@@ -26,21 +26,18 @@ public class LwPolyline extends EntityObject {
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
 
         boolean b1 = dataStream.getB();
+        boolean b2 = dataStream.getB();
 
         int numberOfPoints;
         int numberOfVariableWidths = 0;
         int numberOfBulges = 0;
         
         if (b1) {
-            dataStream.expectB(false);
-            
             // It seems that the polyline is always closed when b1 is set.
             isClosed = true;
-            
+
             numberOfPoints = dataStream.getBS();
         } else {
-            boolean bit0 = dataStream.getB();
-
             boolean bit1 = dataStream.getB();
             boolean bit2 = dataStream.getB();
             boolean areVariableWidthsPresent = dataStream.getB();
@@ -61,7 +58,7 @@ public class LwPolyline extends EntityObject {
 
                 boolean hasWidth = areBulgesPresent;
 
-                if (!bit0) {
+                if (!b2) {
                     int flags17 = dataStream.getBitsUnsigned(8);
                     if (flags17 != 2) {
                         throw new RuntimeException("new case");
@@ -72,7 +69,9 @@ public class LwPolyline extends EntityObject {
                     if (hasWidth) {
                         constantWidth = dataStream.getBD();
                         numberOfPoints = dataStream.getBS();
-
+                        if (numberOfPoints == 0) {
+                            System.out.println("it's gone wrong");
+                        }
                         if (areVariableWidthsPresent == areBulgesPresent) {
                             System.out.println("here");
                         }
@@ -89,7 +88,16 @@ public class LwPolyline extends EntityObject {
                             }
                         }
                     } else {
+                        if (bitC) {
+                            // When this bit is set there appears to be an extra
+                            // bit-double.  TODO compare to DXF to determine what
+                            // this is.
+                            double x = dataStream.getBD();
+                        }
                         numberOfPoints = dataStream.getBS();
+                        if (numberOfPoints == 0) {
+                            System.out.println("it's gone wrong");
+                        }
                         numberOfVariableWidths = 0;
                         numberOfBulges = 0;
                     }
@@ -98,6 +106,9 @@ public class LwPolyline extends EntityObject {
                     
                     constantWidth = dataStream.getBD();
                     numberOfPoints = dataStream.getBS();
+                    if (numberOfPoints == 0) {
+                        System.out.println("it's gone wrong");
+                    }
 
                     numberOfVariableWidths = 0;
                     numberOfBulges = 0;
@@ -122,7 +133,7 @@ public class LwPolyline extends EntityObject {
             } else {
                 isClosed = false;
                 
-                if (!bit0) {
+                if (!b2) {
                     // Actually this path is never hit in the test files.
                     System.out.println("this case fails");
                 }

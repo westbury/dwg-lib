@@ -1,5 +1,8 @@
 package com.onespatial.dwglib.objects;
 
+import java.io.UnsupportedEncodingException;
+import java.text.MessageFormat;
+
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 import com.onespatial.dwglib.bitstreams.Handle;
@@ -22,7 +25,7 @@ public class LType extends NonEntityObject {
         public double rotation;
         public int shapeFlag;
         private Handle shapefileForDashHandle;
-        private Handle shapefileForShapeHandle;
+        public String textToBeDrawn;
 
         public void readFromDataStream(BitBuffer dataStream) {
             dashLength = dataStream.getBD();
@@ -35,29 +38,27 @@ public class LType extends NonEntityObject {
         }
         
         public void readFromHandleStream(BitBuffer handleStream) {
-            try {
-                shapefileForDashHandle = handleStream.getHandle();
-                } catch (Exception e) {
-                    int ii = 34;
-                }
-            shapefileForShapeHandle = handleStream.getHandle();
+            shapefileForDashHandle = handleStream.getHandle();
         }
 
         public CadObject getShapefileForDash() {
-            if (shapefileForDashHandle == null) {
-                return null;
-            } else {
-                CadObject result = objectMap.parseObjectPossiblyNull(shapefileForDashHandle);
-                return (CadObject) result;
-            }
+            CadObject result = objectMap.parseObjectPossiblyNull(shapefileForDashHandle);
+            return (CadObject) result;
         }
 
-        public CadObject getShapefileForShape() {
-            if (shapefileForShapeHandle == null) {
-                return null;
-            } else {
-                CadObject result = objectMap.parseObjectPossiblyNull(shapefileForShapeHandle);
-                return (CadObject) result;
+        public void extractTextFromTextArea(int[] textArea) {
+            int textLength = 0;
+            for (int i = complexShapecode; i < textArea.length && textArea[i] != 0; i++) {
+                textLength++;
+            }
+            byte[] extractedBytes = new byte[textLength];
+            for (int j = 0; j < textLength; j++) {
+                extractedBytes[j] = (byte)textArea[complexShapecode+j];
+            }
+            try {
+                textToBeDrawn = new String(extractedBytes, "UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                objectMap.getIssues().addWarning("Invalid text in LType text area.  The text is not valid UTF-8.");
             }
         }
     }
@@ -86,21 +87,31 @@ public class LType extends NonEntityObject {
 		patternLen = dataStream.getBD();
 		dataStream.expectRC(65);
 		int numDashes = dataStream.getRC();
+
+		boolean isTextAreaPresent = false;
 		
 		dashes = new Dash[numDashes];
         for (int i = 0; i < numDashes; i++) {
             dashes[i] = new Dash();
             dashes[i].readFromDataStream(dataStream);
+            
+            isTextAreaPresent = isTextAreaPresent || ((dashes[i].shapeFlag & 0x02) != 0);
         }
 		
-		// No 512 byte area in sample file
+		// The 512 byte area
+        if (isTextAreaPresent) {
+            int[] textArea = dataStream.getBytes(512);
+            
+            for (int i = 0; i < numDashes; i++) {
+                if (((dashes[i].shapeFlag & 0x02) != 0)) {
+                    dashes[i].extractTextFromTextArea(textArea);
+                }
+            }
+        }
 
 		// The handles.
 		
 		externalReferenceBlockHandle = handleStream.getHandle();
-
-		    
-		if (numDashes > 1) numDashes = 1;  // Hack test
 		for (int i = 0; i < numDashes; i++) {
             dashes[i].readFromHandleStream(handleStream);
         }

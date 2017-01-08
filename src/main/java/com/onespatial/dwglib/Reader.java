@@ -61,11 +61,13 @@ import com.onespatial.dwglib.objects.LTypeControlObj;
 import com.onespatial.dwglib.objects.Layer;
 import com.onespatial.dwglib.objects.LayerControlObj;
 import com.onespatial.dwglib.objects.Layout;
+import com.onespatial.dwglib.objects.Leader;
 import com.onespatial.dwglib.objects.Line;
 import com.onespatial.dwglib.objects.LwPolyline;
 import com.onespatial.dwglib.objects.MLineStyle;
 import com.onespatial.dwglib.objects.MText;
 import com.onespatial.dwglib.objects.ObjectMap;
+import com.onespatial.dwglib.objects.PlaneSurface;
 import com.onespatial.dwglib.objects.Point;
 import com.onespatial.dwglib.objects.PolylineMesh;
 import com.onespatial.dwglib.objects.PolylinePFace;
@@ -257,7 +259,7 @@ public class Reader implements AutoCloseable {
 			return doneObjects.get(offsetIntoObjectMap);
 		}
 
-		BitStreams bitStreams = new BitStreams(objectBuffer, offsetIntoObjectMap.intValue());
+		BitStreams bitStreams = new BitStreams(objectBuffer, offsetIntoObjectMap.intValue(), issues);
 		BitBuffer dataStream = bitStreams.getDataStream();
 		BitBuffer stringStream = bitStreams.getStringStream();
 		BitBuffer handleStream = bitStreams.getHandleStream();
@@ -276,6 +278,9 @@ public class Reader implements AutoCloseable {
             switch (thisClass.classdxfname) {
             case "ACDBDICTIONARYWDFLT":
                 cadObject = new AcdbDictionaryWithDefault(objectMap);
+                break;
+            case "PLANESURFACE":
+                cadObject = new PlaneSurface(objectMap);
                 break;
             case "SORTENTSTABLE":
                 cadObject = new SortEntsTable(objectMap);
@@ -349,6 +354,9 @@ public class Reader implements AutoCloseable {
 				break;
             case 44:
                 cadObject = new MText(objectMap);
+                break;
+            case 45:
+                cadObject = new Leader(objectMap);
                 break;
 			case 48:
 				cadObject = new BlockControlObj(objectMap);
@@ -680,7 +688,7 @@ public class Reader implements AutoCloseable {
 				// The signature
 				byte[] headerSignature = new byte [] { (byte)0xCF,0x7B,0x1F,0x23,(byte)0xFD,(byte)0xDE,0x38,(byte)0xA9,0x5F,0x7C,0x68,(byte)0xB8,0x4E,0x6D,0x33,0x5F };
 
-				BitStreams bitStreams = new BitStreams(expandedData, headerSignature, fileVersion);
+				BitStreams bitStreams = new BitStreams(expandedData, headerSignature, fileVersion, issues);
 
 				header = new Header(bitStreams, fileVersion);
 
@@ -733,7 +741,7 @@ public class Reader implements AutoCloseable {
 
 				byte[] classesSignature = new byte [] { (byte)0x8D, (byte)0xA1, (byte)0xC4, (byte)0xB8, (byte)0xC4, (byte)0xA9, (byte)0xF8, (byte)0xC5, (byte)0xC0, (byte)0xDC, (byte)0xF4, (byte)0x5F, (byte)0xE7, (byte)0xCF, (byte)0xB6, (byte)0x8A};
 
-				BitStreams bitStreams = new BitStreams(combinedBuffer, classesSignature, fileVersion);
+				BitStreams bitStreams = new BitStreams(combinedBuffer, classesSignature, fileVersion, issues);
 
 				BitBuffer bitClasses = bitStreams.getDataStream();
 				BitBuffer bitClassesStrings = bitStreams.getStringStream();
@@ -1127,6 +1135,10 @@ public class Reader implements AutoCloseable {
     {
         // TODO Auto-generated method stub
         
+    }
+
+    public Issues getIssues() {
+        return issues;
     }
 
 }
