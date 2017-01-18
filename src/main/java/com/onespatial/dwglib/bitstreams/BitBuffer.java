@@ -23,11 +23,6 @@ package com.onespatial.dwglib.bitstreams;
 
 import java.io.UnsupportedEncodingException;
 import java.text.MessageFormat;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.temporal.JulianFields;
 
 import com.onespatial.dwglib.Issues;
 
@@ -442,36 +437,6 @@ public class BitBuffer {
         if (actual != expected) {
             issues.addWarning(MessageFormat.format("Unknown bit-double value: {0} expected but {1} found. Investigation needed.", expected, actual));
         }
-    }
-
-    public void localDateTime(Value<LocalDateTime> localDateTime) {
-        int julianDay = getBL();
-        int millisecondsIntoDay = getBL();
-
-        LocalDate datePart = LocalDate.MIN.with(JulianFields.JULIAN_DAY, julianDay);
-        LocalTime timePart = LocalTime.ofNanoOfDay(1000000L * millisecondsIntoDay);
-        LocalDateTime value = LocalDateTime.of(datePart,timePart);
-
-        localDateTime.set(value);
-
-        // This code writes back....
-        //		LocalDate dd = value.toLocalDate();
-        //		LocalTime tttt = value.toLocalTime();
-        //		long jj = dd.getLong(JulianFields.JULIAN_DAY);
-        //		
-        //		int mss = tttt.get(ChronoField.MILLI_OF_DAY);
-
-    }
-
-    public void duration(Value<Duration> duration) {
-        int days = getBL();
-        int millisecondsIntoDay = getBL();
-
-        Duration wholeDaysPart = Duration.ofDays(days);
-        Duration partOfDayPart = Duration.ofMillis(millisecondsIntoDay);
-        Duration value = wholeDaysPart.plus(partOfDayPart);
-
-        duration.set(value);
     }
 
     public void CMC(Value<CmColor> color) {

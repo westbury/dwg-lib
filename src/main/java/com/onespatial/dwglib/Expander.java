@@ -159,11 +159,17 @@ public class Expander {
 	}
 
 	private int getUnsignedByte() {
-		return Byte.toUnsignedInt(compressedData[inputPosition++]);
+	    // In Java 8 we can use Byte.toUnsignedInt method but as
+	    // we want to support Java 7 for the time being we don't
+	    // use that method.
+	    return (compressedData[inputPosition++]) & 0xff;
 	}
 
 	private int peekUnsignedByte() {
-		return Byte.toUnsignedInt(compressedData[inputPosition]);
+        // In Java 8 we can use Byte.toUnsignedInt method but as
+        // we want to support Java 7 for the time being we don't
+        // use that method.
+		return (compressedData[inputPosition]) & 0xff;
 	}
 	
 	private class TwoByteOffset {

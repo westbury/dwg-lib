@@ -21,9 +21,6 @@ package com.onespatial.dwglib;
  * DEALINGS IN THE SOFTWARE.
  */
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 import com.onespatial.dwglib.bitstreams.BitStreams;
 import com.onespatial.dwglib.bitstreams.CmColor;
@@ -106,13 +103,17 @@ public class Header
     public final Value<Double> FACETRES = new Value<>();
     public final Value<Double> CMLSCALE = new Value<>();
     public final Value<Double> CELTSCALE = new Value<>();
-    public final Value<LocalDateTime> TDCREATE = new Value<>();
-    public final Value<LocalDateTime> TDUPDATE = new Value<>();
+    public final Value<Integer> TDCREATEday = new Value<>();
+    public final Value<Integer> TDCREATEmilliseconds = new Value<>();
+    public final Value<Integer> TDUPDATEday = new Value<>();
+    public final Value<Integer> TDUPDATEmilliseconds = new Value<>();
     public final Value<Integer> Unknown4 = new Value<>();
     public final Value<Integer> Unknown5 = new Value<>();
     public final Value<Integer> Unknown6 = new Value<>();
-    public final Value<Duration> TDINDWG = new Value<>();
-	public final Value<Duration> TDUSRTIMER = new Value<>();
+    public final Value<Integer> TDINDWGday = new Value<>();
+    public final Value<Integer> TDINDWGmilliseconds = new Value<>();
+	public final Value<Integer> TDUSRTIMERday = new Value<>();
+    public final Value<Integer> TDUSRTIMERmilliseconds = new Value<>();
 	public final Value<CmColor> CECOLOR = new Value<>();
 	public final Value<Handle> CLAYER = new Value<>();
 	public final Value<Handle> TEXTSTYLE = new Value<>();
@@ -392,13 +393,17 @@ public class Header
         bitBuffer.BD(FACETRES);
         bitBuffer.BD(CMLSCALE);
         bitBuffer.BD(CELTSCALE);
-        bitBuffer.localDateTime(TDCREATE);
-        bitBuffer.localDateTime(TDUPDATE);
+        bitBuffer.BL(TDCREATEday);
+        bitBuffer.BL(TDCREATEmilliseconds);
+        bitBuffer.BL(TDUPDATEday);
+        bitBuffer.BL(TDUPDATEmilliseconds);
         bitBuffer.BL(Unknown4);
         bitBuffer.BL(Unknown5);
         bitBuffer.BL(Unknown6);
-        bitBuffer.duration(TDINDWG);
-        bitBuffer.duration(TDUSRTIMER);
+        bitBuffer.BL(TDINDWGday);
+        bitBuffer.BL(TDINDWGmilliseconds);
+        bitBuffer.BL(TDUSRTIMERday);
+        bitBuffer.BL(TDUSRTIMERmilliseconds);
         bitBuffer.CMC(CECOLOR);
         bitBuffer.H(HANDSEED); // The next handle, with an 8-bit length specifier preceding the handle bytes (standard hex handle form) (code 0). The HANDSEED is not part of the handle stream, but of the normal data stream (relevant for R21 and later).
         handleStream.H(CLAYER, HandleType.HARD_POINTER);
