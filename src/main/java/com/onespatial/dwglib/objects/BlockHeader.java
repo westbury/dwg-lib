@@ -11,7 +11,7 @@ import com.onespatial.dwglib.bitstreams.Point3D;
 
 /**
  * parent is BLOCK HEADER
- * 
+ *
  * @author Nigel Westbury
  *
  */
@@ -25,7 +25,7 @@ public class BlockHeader extends NonEntityObject {
     public Point3D basePoint;
     public String xrefPName;
     public String blockDescription;
-    private int [] previewData;
+    private int[] previewData;
     public int insertUnits;
     public boolean explodable;
     public int blockScaling;
@@ -39,20 +39,21 @@ public class BlockHeader extends NonEntityObject {
     public BlockHeader(ObjectMap objectMap) {
         super(objectMap);
     }
-    
+
     @Override
-    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
+    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream,
+            FileVersion fileVersion) {
         // 19.4.50 BLOCK HEADER (49) page 155
 
         entryName = stringStream.getTU();
         sixtyFourFlag = dataStream.getB();
         /*
-         * At this point we always seem to be three bits prior to a word
-         * that best matches the expected flags.  We get there reliably if
-         * we don't read the xrefindex value.  TODO investigate this as this
-         * code may not be correct.
+         * At this point we always seem to be three bits prior to a word that
+         * best matches the expected flags. We get there reliably if we don't
+         * read the xrefindex value. TODO investigate this as this code may not
+         * be correct.
          */
-//        int xrefordinal = dataStream.getBS();
+        // int xrefordinal = dataStream.getBS();
         boolean xdep = dataStream.getB();
         boolean anonymous = dataStream.getB();
         boolean hasAttributes = dataStream.getB();
@@ -62,14 +63,14 @@ public class BlockHeader extends NonEntityObject {
         int ownedObjectCount = dataStream.getBL();
         basePoint = dataStream.get3BD();
         xrefPName = stringStream.getTU();
-        
+
         List<Integer> insertCounts = new ArrayList<>();
         int thisInsertCount = dataStream.getRC();
         while (thisInsertCount != 0) {
             insertCounts.add(thisInsertCount);
             thisInsertCount = dataStream.getRC();
         }
-        
+
         blockDescription = stringStream.getTU();
         int sizeOfPreviewData = dataStream.getBL();
         previewData = dataStream.getBytes(sizeOfPreviewData);
@@ -78,14 +79,14 @@ public class BlockHeader extends NonEntityObject {
         blockScaling = dataStream.getRC();
 
         // The handles
-        
+
         if (!blockIsXref && !xrefOverlaid) {
             firstEntityHandle = handleStream.getHandle(handleOfThisObject);
             lastEntityHandle = handleStream.getHandle(handleOfThisObject);
         }
 
         ownedObjectHandles = new Handle[ownedObjectCount];
-        for (int i = 0; i< ownedObjectCount; i++) {
+        for (int i = 0; i < ownedObjectCount; i++) {
             ownedObjectHandles[i] = handleStream.getHandle();
         }
 
@@ -94,7 +95,7 @@ public class BlockHeader extends NonEntityObject {
         insertHandles = new ArrayList<>();
         for (Integer insertCount : insertCounts) {
             List<Handle> thisList = new ArrayList<>();
-            for (int i = 0; i< insertCount; i++) {
+            for (int i = 0; i < insertCount; i++) {
                 Handle insertHandle = handleStream.getHandle();
                 thisList.add(insertHandle);
             }
@@ -110,16 +111,17 @@ public class BlockHeader extends NonEntityObject {
         handleStream.assertEndOfStream();
     }
 
-	public String toString() {
-		return "BLOCK HEADER";
-	}
+    @Override
+    public String toString() {
+        return "BLOCK HEADER";
+    }
 
     public CadObject getFirstEntity() {
         if (firstEntityHandle == null) {
             return null;
         } else {
             CadObject result = objectMap.parseObjectPossiblyNull(firstEntityHandle);
-            return (CadObject) result;
+            return result;
         }
     }
 
@@ -128,24 +130,21 @@ public class BlockHeader extends NonEntityObject {
             return null;
         } else {
             CadObject result = objectMap.parseObjectPossiblyNull(lastEntityHandle);
-            return (CadObject) result;
+            return result;
         }
     }
 
-    public List<EntityObject> getOwnedObjects()
-    {
-        return new AbstractList<EntityObject>() {
+    public List<CadObject> getOwnedObjects() {
+        return new AbstractList<CadObject>() {
 
             @Override
-            public EntityObject get(int index)
-            {
+            public CadObject get(int index) {
                 CadObject result = objectMap.parseObject(ownedObjectHandles[index]);
-                return (EntityObject) result;
+                return result;
             }
 
             @Override
-            public int size()
-            {
+            public int size() {
                 return ownedObjectHandles.length;
             }
         };
@@ -153,22 +152,21 @@ public class BlockHeader extends NonEntityObject {
 
     public CadObject getEndBlock() {
         CadObject result = objectMap.parseObject(endBlockHandle);
-        return (CadObject) result;
+        return result;
     }
 
     /**
-     * This method returns all inserts in a flat list.  This no doubt
-     * needs to be changed to return a two dimensional list in case
-     * consumers need the extra information.
+     * This method returns all inserts in a flat list. This no doubt needs to be
+     * changed to return a two dimensional list in case consumers need the extra
+     * information.
      */
-    public List<CadObject> getInserts()
-    {
-        List<CadObject> result = new ArrayList<>();
-        
-        for (List<Handle> x : this.insertHandles) {
+    public List<Insert> getInserts() {
+        List<Insert> result = new ArrayList<>();
+
+        for (List<Handle> x : insertHandles) {
             for (Handle y : x) {
-                CadObject insert = objectMap.parseObject(y);
-                result.add(insert);
+                CadObject insert = objectMap.parseObjectPossiblyOrphaned(y);
+                result.add((Insert) insert);
             }
         }
         return result;
@@ -176,7 +174,7 @@ public class BlockHeader extends NonEntityObject {
 
     public CadObject getLayout() {
         CadObject result = objectMap.parseObjectPossiblyNull(layoutHandle);
-        return (CadObject) result;
+        return result;
     }
 
 }

@@ -16,9 +16,9 @@ public class SortEntsTable extends NonEntityObject {
     public SortEntsTable(ObjectMap objectMap) {
         super(objectMap);
     }
-    
+
     @Override
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
+    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.90 SORTENTSTABLE page 207
 
         int numEntries = dataStream.getBL();
@@ -27,22 +27,22 @@ public class SortEntsTable extends NonEntityObject {
         for (int i = 0; i < numEntries; i++) {
             sortHandles[i] = dataStream.getHandle();
         }
-        
+
         // The handles
-        
+
         ownerHandle = handleStream.getHandle(handleOfThisObject);
-        
+
         entityHandles = new Handle[numEntries];
         for (int i = 0; i < numEntries; i++) {
             entityHandles[i] = handleStream.getHandle(handleOfThisObject);
         }
-        
+
         handleStream.advanceToByteBoundary();
 
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
         handleStream.assertEndOfStream();
-	}
+    }
 
     public List<CadObject> getSortObjects()
     {
@@ -51,17 +51,12 @@ public class SortEntsTable extends NonEntityObject {
             @Override
             public CadObject get(int index)
             {
-                try {
-                CadObject result = objectMap.parseObject(sortHandles[index]);
-                return (CadObject) result;
-                } catch (Exception e) {
-                    /*
-                     * The sort values may contain handles that actually do not exist any more
-                     * in the handle table.
-                     */
-                    return null;
-                    
-                }
+                /*
+                 * The sort values may contain handles that actually do not
+                 * exist any more in the handle table.
+                 */
+                CadObject result = objectMap.parseObjectPossiblyOrphaned(sortHandles[index]);
+                return result;
             }
 
             @Override
@@ -74,7 +69,7 @@ public class SortEntsTable extends NonEntityObject {
 
     public CadObject getOwner() {
         CadObject result = objectMap.parseObject(ownerHandle);
-        return (CadObject) result;
+        return result;
     }
 
     public List<CadObject> getEntities()
@@ -84,13 +79,12 @@ public class SortEntsTable extends NonEntityObject {
             @Override
             public CadObject get(int index)
             {
-                try {
-                    CadObject result = objectMap.parseObject(entityHandles[index]);
-                    return (EntityObject) result;
-                } catch (Exception e) {
-                    return null;
-                    
-                }
+                /*
+                 * The sort entities may contain handles that actually do not
+                 * exist any more in the handle table.
+                 */
+                CadObject result = objectMap.parseObjectPossiblyOrphaned(entityHandles[index]);
+                return result;
             }
 
             @Override
@@ -101,8 +95,9 @@ public class SortEntsTable extends NonEntityObject {
         };
     }
 
-	public String toString() {
-		return "SORTENTSTABLE";
-	}
+    @Override
+    public String toString() {
+        return "SORTENTSTABLE";
+    }
 
 }

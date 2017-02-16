@@ -8,21 +8,18 @@ import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Hatch extends EntityObject {
 
-    public static class PolylinePathSegment
-    {
+    public static class PolylinePathSegment {
         public Point2D pt0;
         public double bulge;
     }
 
-    public class PolylinePath extends Path
-    {
+    public class PolylinePath extends Path {
         public boolean bulgesPresent;
         public boolean closed;
         public PolylinePathSegment[] pathSegments;
 
         @Override
-        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion)
-        {
+        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion) {
             bulgesPresent = dataStream.getB();
             closed = dataStream.getB();
             int numPathSegs = dataStream.getBL();
@@ -33,18 +30,16 @@ public class Hatch extends EntityObject {
                     pathSegments[j].bulge = dataStream.getBD();
                 }
             }
-            
+
             super.readBoundaryItemCountAndHandles(dataStream, handleStream);
         }
     }
 
-    public class SegmentedPath extends Path
-    {
+    public class SegmentedPath extends Path {
         public PathType[] pathSegments;
 
         @Override
-        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion)
-        {
+        public void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion) {
             int numPathSegs = dataStream.getBL();
             pathSegments = new PathType[numPathSegs];
             for (int j = 0; j < numPathSegs; j++) {
@@ -62,23 +57,22 @@ public class Hatch extends EntityObject {
                 case 4: // SPLINE
                     pathSegments[j] = new SplinePathType();
                     break;
-                    default:
-                        throw new RuntimeException("unexpected case");
+                default:
+                    throw new RuntimeException("unexpected case");
                 }
-                
+
                 pathSegments[j].readFromDataStream(dataStream, fileVersion);
             }
-            
+
             super.readBoundaryItemCountAndHandles(dataStream, handleStream);
         }
     }
 
-    public abstract class Path
-    {
+    public abstract class Path {
         private Handle[] boundaryObjHandles;
 
         public abstract void readFromDataStream(BitBuffer dataStream, BitBuffer handleStream, FileVersion fileVersion);
-        
+
         public void readBoundaryItemCountAndHandles(BitBuffer dataStream, BitBuffer handleStream) {
             int numboundaryobjhandles = dataStream.getBL();
             boundaryObjHandles = new Handle[numboundaryobjhandles];
@@ -94,13 +88,13 @@ public class Hatch extends EntityObject {
         public Point2D pt0;
         public Point2D offset;
         public double[] dashLengths;
-        
+
         public void readFromDataStream(BitBuffer dataStream) {
             angle = dataStream.getBD();
             pt0 = dataStream.get2RD();
             offset = dataStream.get2BD();
             int numDashes = dataStream.getBL();
-            dashLengths = new double[numDashes]; 
+            dashLengths = new double[numDashes];
             for (int i = 0; i < numDashes; i++) {
                 dashLengths[i] = dataStream.getBD();
             }
@@ -150,6 +144,7 @@ public class Hatch extends EntityObject {
         public double pt0;
         public double pt1;
 
+        @Override
         public void readFromDataStream(BitBuffer dataStream, FileVersion fileVersion) {
             pt0 = dataStream.getRD();
             pt1 = dataStream.getRD();
@@ -163,6 +158,7 @@ public class Hatch extends EntityObject {
         public double endAngle;
         public boolean isCcw;
 
+        @Override
         public void readFromDataStream(BitBuffer dataStream, FileVersion fileVersion) {
             pt0 = dataStream.getRD();
             radius = dataStream.getBD();
@@ -180,6 +176,7 @@ public class Hatch extends EntityObject {
         public double endAngle;
         public boolean isCcw;
 
+        @Override
         public void readFromDataStream(BitBuffer dataStream, FileVersion fileVersion) {
             pt0 = dataStream.get2RD();
             endPoint = dataStream.get2RD();
@@ -200,6 +197,7 @@ public class Hatch extends EntityObject {
         public Point2D startTangent;
         public Point2D endTanget;
 
+        @Override
         public void readFromDataStream(BitBuffer dataStream, FileVersion fileVersion) {
             degree = dataStream.getBL();
             boolean isRational = dataStream.getB();
@@ -230,7 +228,6 @@ public class Hatch extends EntityObject {
         }
     }
 
-
     public Point3D start;
     public Point3D end;
     public double thickness;
@@ -259,7 +256,8 @@ public class Hatch extends EntityObject {
     }
 
     @Override
-    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
+    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream,
+            FileVersion fileVersion) {
 
         // 19.4.73 HATCH (78) page 184
 
@@ -283,9 +281,9 @@ public class Hatch extends EntityObject {
         name = stringStream.getTU();
         boolean solidFill = dataStream.getB();
         associative = dataStream.getB();
-        
+
         boolean pixelSizePresent = false;
-        
+
         int numPaths = dataStream.getBL();
         paths = new Path[numPaths];
         for (int i = 0; i < numPaths; i++) {
@@ -299,21 +297,22 @@ public class Hatch extends EntityObject {
 
             paths[i].readFromDataStream(dataStream, handleStream, fileVersion);
 
-            pixelSizePresent |= ((pathFlag & 0x04) != 0); 
+            // Extra, not documented in spec.
+            // This field is not present when numPaths = 0 so
+            // this is assumed to be a field that exists in each path.
+            // known to appear in R27.
+            int unknown = dataStream.getBL();
+
+            pixelSizePresent |= (pathFlag & 0x04) != 0;
         }
 
-        // Extra, not documented in spec.
-        // Possibly this is field 97, as test files all have numPaths = 1 so can't distinguish.
-        // known to appear in R27.
-        int unknown = dataStream.getBL();
-        
         style = dataStream.getBS();
         patternType = dataStream.getBS();
         if (!solidFill) {
             fill = new Fill();
             fill.readFromDataStream(dataStream);
         }
-        
+
         if (pixelSizePresent) {
             pixelSize = dataStream.getBD();
         }
@@ -323,7 +322,7 @@ public class Hatch extends EntityObject {
         for (int i = 0; i < numSeedPoints; i++) {
             seedPoints[i] = dataStream.get2RD();
         }
-        
+
         handleStream.advanceToByteBoundary();
 
         dataStream.assertEndOfStream();
@@ -331,6 +330,7 @@ public class Hatch extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "HATCH";
     }

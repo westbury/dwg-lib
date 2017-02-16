@@ -8,14 +8,15 @@ import com.onespatial.dwglib.bitstreams.Handle;
 public class ObjectMap
 {
     private Reader reader;
-    
+
     public ObjectMap(Reader reader) {
         this.reader = reader;
     }
- 
+
     public Issues getIssues() {
         return reader.getIssues();
     }
+
     public CadObject parseObject(Handle handle)
     {
         return reader.parseObject(handle);
@@ -27,6 +28,23 @@ public class ObjectMap
             return null;
         } else {
             return reader.parseObject(handle);
+        }
+    }
+
+    public CadObject parseObjectPossiblyOrphaned(Handle handle)
+    {
+        return reader.parseObjectPossiblyOrphaned(handle);
+    }
+
+    public CadObject parseObjectPossiblyNullOrOrphaned(Handle handle)
+    {
+        if (handle.offset == 0)
+        {
+            return null;
+        }
+        else
+        {
+            return reader.parseObjectPossiblyOrphaned(handle);
         }
     }
 
