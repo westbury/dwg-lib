@@ -278,9 +278,6 @@ public abstract class CadObject {
             @Override
             public CadObject get(int index) {
                 CadObject result = objectMap.parseObjectPossiblyNullOrOrphaned(genericHandles.get(index));
-                if (result == null && genericHandles.get(index).offset != 0) {
-                    System.out.println("can happen");
-                }
                 return result;
             }
 

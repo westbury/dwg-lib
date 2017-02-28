@@ -56,12 +56,12 @@ public class ThreeDSolid extends EntityObject {
     }
 
     @Override
-	public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
+    public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
         // 19.4.39 REGION (37), 3DSOLID (38), BODY (39) page 137
 
         // TODO need to read as Common Entity Data is described in 19.4.1 page 104
         // (Common Entity Format read above)
-        
+
         boolean acisEmptyBit = dataStream.getB();
         boolean unknownBit = dataStream.getB();
 
@@ -73,7 +73,7 @@ public class ThreeDSolid extends EntityObject {
             }
         } else if (version == 2) {
             // process ACIS file
-            
+
             StringBuilder header = new StringBuilder();
             byte [] h2 = new byte[15];
             for (int i = 0; i < 15; i++) {
@@ -88,10 +88,8 @@ public class ThreeDSolid extends EntityObject {
             {
                 throw new RuntimeException(e);
             }
-            
-            if (str.equals("ACIS BinaryFile")) {
-                System.out.println("is binary");
 
+            if (str.equals("ACIS BinaryFile")) {
                 byte[] endMarker;
                 try
                 {
@@ -128,19 +126,18 @@ public class ThreeDSolid extends EntityObject {
                     if (numMatches == 0) {
                         sourceByte = (byte)dataStream.getRC();
                     }
-                } while (true);    
+                } while (true);
 
                 // We should return a ByteBuffer for the binary data.
-//                ByteBuffer.wrap(bigArray, offset, length).slice()
-                
+                //                ByteBuffer.wrap(bigArray, offset, length).slice()
+
             } else {
-                System.out.println("is text");
-                
+                objectMap.getIssues().addWarning("text file present but not yet supported");
             }
         } else {
             throw new RuntimeException("Version must be 1 or 2");
         }
-        
+
         // TODO check range of fields covered by this flag:
         // (need sample file with flag set off)
         boolean wireframeDataPresent = dataStream.getB();
@@ -165,51 +162,54 @@ public class ThreeDSolid extends EntityObject {
                 // (file reads without this because numberOfSilhouettes is zero)
 
             }
-            
+
             for (int i = 0; i < numWires; i++) {
                 // TODO complete this.
                 // why num wires again?  And this data does not exist anyway.  Despite loads of wires
                 // there are just enough bits left for a B and BL.  Probably this should be nested in the silhouettes
                 // loop but need file with silhouettes to confirm.
-                
+
             }
-            
+
             boolean acisEmptyBit2 = dataStream.getB();
             int unknown = dataStream.getBL();
         }
-        
+
         historyId = handleStream.getHandle();
-        
+
         handleStream.advanceToByteBoundary();
-        
+
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
         handleStream.assertEndOfStream();
-	}
+    }
 
-	public String toString() {
-		return "3DSOLID";
-	}
+    @Override
+    public String toString() {
+        return "3DSOLID";
+    }
 
-	private class ByteBufferAsInputStream extends InputStream {
+    private class ByteBufferAsInputStream extends InputStream {
 
-	    private ByteBuffer byteBuffer;
+        private ByteBuffer byteBuffer;
 
-	    ByteBufferAsInputStream(ByteBuffer byteBuffer) {
-	        this.byteBuffer = byteBuffer;
-	    }
+        ByteBufferAsInputStream(ByteBuffer byteBuffer) {
+            this.byteBuffer = byteBuffer;
+        }
 
-	    public int read() throws IOException {
-	        if (!byteBuffer.hasRemaining()) {
-	            return -1;
-	        }
-	        return byteBuffer.get();
-	    }
+        @Override
+        public int read() throws IOException {
+            if (!byteBuffer.hasRemaining()) {
+                return -1;
+            }
+            return byteBuffer.get();
+        }
 
-	    public int read(byte[] bytes, int offset, int length) throws IOException {
-	        length = Math.min(byteBuffer.remaining(), length);
-	        byteBuffer.get(bytes, offset, length);
-	        return length;
-	    }
-	}
+        @Override
+        public int read(byte[] bytes, int offset, int length) throws IOException {
+            length = Math.min(byteBuffer.remaining(), length);
+            byteBuffer.get(bytes, offset, length);
+            return length;
+        }
+    }
 }

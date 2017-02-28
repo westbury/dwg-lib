@@ -74,6 +74,7 @@ import com.onespatial.dwglib.objects.PolylinePFace;
 import com.onespatial.dwglib.objects.SeqEnd;
 import com.onespatial.dwglib.objects.Solid;
 import com.onespatial.dwglib.objects.SortEntsTable;
+import com.onespatial.dwglib.objects.Spline;
 import com.onespatial.dwglib.objects.Style;
 import com.onespatial.dwglib.objects.StyleControlObj;
 import com.onespatial.dwglib.objects.Text;
@@ -356,6 +357,9 @@ public class Reader implements AutoCloseable {
                 break;
             case 34:
                 cadObject = new ViewPort(objectMap);
+                break;
+            case 36:
+                cadObject = new Spline(objectMap);
                 break;
             case 38:
                 cadObject = new ThreeDSolid(objectMap);
@@ -1119,9 +1123,11 @@ public class Reader implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        // TODO Auto-generated method stub
-
+    public void close() {
+        /*
+         * Currently everything is read into memory on construction, and we
+         * don't support writing so there is nothing to do here.
+         */
     }
 
     public Issues getIssues() {

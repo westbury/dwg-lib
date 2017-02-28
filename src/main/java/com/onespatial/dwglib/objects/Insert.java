@@ -26,7 +26,7 @@ public class Insert extends EntityObject {
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.9 INSERT (7) page 111    
+        // 19.4.9 INSERT (7) page 111
 
         insertPoint = dataStream.get3BD();
         int dataFlags = dataStream.getBB();
@@ -53,7 +53,6 @@ public class Insert extends EntityObject {
             break;
         }
 
-
         rotation = dataStream.getBD();
         extrusion = dataStream.get3BD();
         boolean hasAttributes = dataStream.getB();
@@ -61,10 +60,9 @@ public class Insert extends EntityObject {
         if (hasAttributes) {
             ownedObjectCount = dataStream.getBL();
         }
-        
-        
+
         // The handles
-        
+
         blockHeaderHandle = handleStream.getHandle();
 
         ownedObjectHandles = new Handle[ownedObjectCount];
@@ -79,13 +77,10 @@ public class Insert extends EntityObject {
         handleStream.advanceToByteBoundary();
         dataStream.assertEndOfStream();
         stringStream.assertEndOfStream();
-        try {
         handleStream.assertEndOfStream();
-        } catch (Exception e) {
-            System.out.println("exception to be investigated");
-        }
     }
 
+    @Override
     public String toString() {
         return "INSERT";
     }
@@ -103,7 +98,7 @@ public class Insert extends EntityObject {
             public CadObject get(int index)
             {
                 CadObject result = objectMap.parseObject(ownedObjectHandles[index]);
-                return (CadObject) result;
+                return result;
             }
 
             @Override
@@ -119,7 +114,7 @@ public class Insert extends EntityObject {
             return null;
         } else {
             CadObject result = objectMap.parseObject(seqEndHandle);
-            return (CadObject) result;
+            return result;
         }
     }
 

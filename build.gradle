@@ -1,13 +1,84 @@
 apply plugin: 'java'
 apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-  testCompile 'junit:junit:4.12'
+    testCompile 'junit:junit:4.12'
 }
 
 sourceCompatibility = '1.7'
 targetCompatibility = '1.7'
+
+group 'com.1spatial'
+version '0.8'
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from 'build/docs/javadoc'
+}
+ 
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allSource
+    classifier = 'sources'
+}
+
+artifacts {
+    archives jar
+    archives javadocJar
+    archives sourcesJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+ 
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+              authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+ 
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+              authentication(userName: sonatypeUsername, password: sonatypePassword)
+            }
+ 
+            pom.project {
+               name 'dwg-lib'
+               packaging 'jar'
+               description 'dwg-lib is a Java library for reading AutoCad files version 2010 and later'
+               url 'https://1spatial.com'
+ 
+               scm {
+                   url 'scm:git@github.com:1SpatialGroupLtd/dwg-lib.git'
+                   connection 'scm:git@github.com:1SpatialGroupLtd/dwg-lib.git'
+                   developerConnection 'scm:git@github.com:1SpatialGroupLtd/dwg-lib.git'
+               }
+ 
+               licenses {
+                   license {
+                       name 'The MIT License'
+                       url 'https://mit-license.org/'
+                       distribution 'repo'
+                   }
+               }
+ 
+               developers {
+                   developer {
+                       id 'nigelw'
+                       name 'Nigel Westbury'
+                   }
+               }
+           }
+        }
+    }
+}
+

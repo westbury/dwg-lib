@@ -17,7 +17,7 @@ public class LwPolyline extends EntityObject {
     public Double constantWidth;
 
     public boolean isClosed;
-    
+
     public LwPolyline(ObjectMap objectMap) {
         super(objectMap);
     }
@@ -31,7 +31,7 @@ public class LwPolyline extends EntityObject {
         int numberOfPoints;
         int numberOfVariableWidths = 0;
         int numberOfBulges = 0;
-        
+
         if (b1) {
             // It seems that the polyline is always closed when b1 is set.
             isClosed = true;
@@ -65,7 +65,7 @@ public class LwPolyline extends EntityObject {
                     }
 
                     isClosed = true;
-                    
+
                     if (hasWidth) {
                         constantWidth = dataStream.getBD();
                         numberOfPoints = dataStream.getBS();
@@ -103,7 +103,7 @@ public class LwPolyline extends EntityObject {
                     }
                 } else {
                     isClosed = false;
-                    
+
                     constantWidth = dataStream.getBD();
                     numberOfPoints = dataStream.getBS();
                     if (numberOfPoints == 0) {
@@ -116,7 +116,7 @@ public class LwPolyline extends EntityObject {
                         if (areVariableWidthsPresent == areBulgesPresent) {
                             System.out.println("");
                         }
-                        if (areVariableWidthsPresent) {                      
+                        if (areVariableWidthsPresent) {
                             numberOfVariableWidths = dataStream.getBS();
                             if (numberOfVariableWidths != numberOfPoints) {
                                 throw new RuntimeException();
@@ -132,19 +132,18 @@ public class LwPolyline extends EntityObject {
                 }
             } else {
                 isClosed = false;
-                
+
                 if (!b2) {
                     // Actually this path is never hit in the test files.
                     System.out.println("this case fails");
                 }
 
-                if (areBulgesPresent || bitC)
+                if (areBulgesPresent || bitC) {
                     System.out.println("here");
-
-
+                }
 
                 numberOfPoints = dataStream.getBS();
-                if (areVariableWidthsPresent) {                      
+                if (areVariableWidthsPresent) {
                     numberOfVariableWidths = dataStream.getBS();
                     if (numberOfVariableWidths != numberOfPoints) {
                         throw new RuntimeException();
@@ -155,13 +154,11 @@ public class LwPolyline extends EntityObject {
                         throw new RuntimeException();
                     }
                 }
-                if (numberOfPoints != 2 || numberOfVariableWidths != 2)
+                if (numberOfPoints != 2 || numberOfVariableWidths != 2) {
                     System.out.println("here");
+                }
             }
         }
-
-
-
 
         points = new ArrayList<>(numberOfPoints);
 
@@ -192,19 +189,20 @@ public class LwPolyline extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "LWPOLYLINE";
     }
-    
+
     public static class VertexOfLwPolyline {
 
         public final Point2D vertex;
         public double startingWidth;
         public double endingWidth;
         public double bulge;
-        
+
         public VertexOfLwPolyline(double x, double y) {
-            this.vertex = new Point2D(x, y);
+            vertex = new Point2D(x, y);
         }
 
         @Override
