@@ -24,8 +24,10 @@ public abstract class EntityObject extends CadObject {
 
         boolean graphicImageFlag = dataStream.getB();
         if (graphicImageFlag) {
-            long sizeOfGraphicImageInBytes = dataStream.getBLL();
+            // 28 Proxy Entity Graphics, page 255
 
+            long sizeOfGraphicImageInBytes = dataStream.getRL();
+            long type = dataStream.getRL();
             for (int i = 0; i < sizeOfGraphicImageInBytes*8; i++) {
                 dataStream.getB();
             }

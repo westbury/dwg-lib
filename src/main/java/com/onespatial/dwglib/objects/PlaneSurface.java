@@ -1,13 +1,14 @@
 package com.onespatial.dwglib.objects;
 
-public class PlaneSurface extends EntityObject {
+public class PlaneSurface extends NonEntityObject {
 
     public PlaneSurface(ObjectMap objectMap) {
         super(objectMap);
     }
-    
-	public String toString() {
-		return "PLANESURFACE";
-	}
+
+    @Override
+    public String toString() {
+        return "PLANESURFACE";
+    }
 
 }
