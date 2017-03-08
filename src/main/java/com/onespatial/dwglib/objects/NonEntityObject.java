@@ -1,8 +1,10 @@
 package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
+import com.onespatial.dwglib.Issues;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 import com.onespatial.dwglib.bitstreams.Handle;
+import com.onespatial.dwglib.writer.BitWriter;
 
 public abstract class NonEntityObject extends CadObject {
 
@@ -33,8 +35,16 @@ public abstract class NonEntityObject extends CadObject {
             xdicobjhandle = handleStream.getHandle();
         }
 
-        
-        this.readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
+        readObjectTypeSpecificData(dataStream, stringStream, handleStream, fileVersion);
+    }
+
+    @Override
+    protected void writePostCommonFields(byte[] byteArray, BitWriter dataStream, BitWriter stringStream,
+            BitWriter handleStream, Issues issues) {
+        // Non-entity objects are not updatable, so can't be dirty, so this
+        // method should
+        // never be called.
+        throw new UnsupportedOperationException();
     }
 
 }

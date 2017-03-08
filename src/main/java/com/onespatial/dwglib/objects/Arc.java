@@ -2,6 +2,7 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Arc extends EntityObject {
@@ -9,7 +10,7 @@ public class Arc extends EntityObject {
     public Point3D center;
     public double radius;
     public double thickness;
-    public Point3D extrusion;
+    public Extrusion extrusion;
     public double startAngle;
     public double endAngle;
 
@@ -19,7 +20,7 @@ public class Arc extends EntityObject {
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.18 ARC (17) page 117    
+        // 19.4.18 ARC (17) page 117
 
         center = dataStream.get3BD();
         radius = dataStream.getBD();
@@ -35,6 +36,7 @@ public class Arc extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "ARC";
     }

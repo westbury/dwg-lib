@@ -2,9 +2,9 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point2D;
-import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Attdef extends EntityObject {
 
@@ -14,7 +14,7 @@ public class Attdef extends EntityObject {
 
     public Point2D alignPoint;
 
-    public Point3D extrusion;
+    public Extrusion extrusion;
 
     public double thickness;
 
@@ -90,14 +90,14 @@ public class Attdef extends EntityObject {
         fieldLength = dataStream.getBS();
         flags = dataStream.getRC();
         lockPosition = dataStream.getB();
-        
+
         // Version appears to be missing.
         // Version makes sense for ATTRIB but not ATTDEF anyway.
-//        version = dataStream.getRC();
-        
+        //        version = dataStream.getRC();
+
         prompt = stringStream.getTU();
         styleHandle = handleStream.getHandle(handleOfThisObject);
-        
+
         handleStream.advanceToByteBoundary();
 
         dataStream.assertEndOfStream();
@@ -105,13 +105,14 @@ public class Attdef extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
-	public String toString() {
-		return "ATTDEF";
-	}
+    @Override
+    public String toString() {
+        return "ATTDEF";
+    }
 
     public CadObject getStyle() {
         CadObject result = objectMap.parseObject(styleHandle);
-        return (CadObject) result;
+        return result;
     }
 
 }

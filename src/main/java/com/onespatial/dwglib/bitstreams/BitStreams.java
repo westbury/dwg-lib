@@ -77,8 +77,15 @@ public class BitStreams {
         handleStreamEnd = byteArray.length * 8;
     }
 
+    /**
+     * Reads the streams inside a CAD object.
+     *
+     * @param objectBuffer
+     * @param byteOffset
+     * @param issues
+     */
     public BitStreams(byte[] objectBuffer, int byteOffset, Issues issues) {
-        this.byteArray = objectBuffer;
+        byteArray = objectBuffer;
         this.issues = issues;
 
         ByteBuffer objectsBuffer = ByteBuffer.wrap(objectBuffer);
@@ -115,7 +122,7 @@ public class BitStreams {
      * the string stream.
      * <P>
      * <code>stringStreamStart</code> and <code>stringStreamEnd</code> are set by this method.
-     *  
+     *
      * @param bitBuffer
      */
     private void identifyStringStream(BitBuffer bitBuffer) {
@@ -142,7 +149,7 @@ public class BitStreams {
                 bitBuffer.position(position);
                 int hiSize = bitBuffer.getRS();
                 int loSize = -strDataSize;
-                strDataSize = (hiSize << 15) | loSize;
+                strDataSize = hiSize << 15 | loSize;
             }
         } else {
             strDataSize = 0;
@@ -178,15 +185,15 @@ public class BitStreams {
 
         byte b = buffer.get();
         while ((b & 0x80) != 0) {
-            int byteValue = (b & 0x7F);
-            result |= (byteValue << shift);
+            int byteValue = b & 0x7F;
+            result |= byteValue << shift;
             shift += 7;
             b = buffer.get();
         }
 
         boolean signBit = (b & 0x40) != 0;
-        int byteValue = (b & 0x3F);
-        result |= (byteValue << shift);
+        int byteValue = b & 0x3F;
+        result |= byteValue << shift;
 
         if (signBit) {
             result = -result;
@@ -203,8 +210,8 @@ public class BitStreams {
         do {
             byte b = buffer.get();
             highBit = (b & 0x80) != 0;
-            int byteValue = (b & 0x7F);
-            result |= (byteValue << shift);
+            int byteValue = b & 0x7F;
+            result |= byteValue << shift;
             shift += 7;
         } while (highBit);
 
@@ -221,8 +228,8 @@ public class BitStreams {
         do {
             short word = buffer.getShort();
             highBit = (word & 0x8000) != 0;
-            int wordValue = (word & 0x7FFF);
-            result |= (wordValue << shift);
+            int wordValue = word & 0x7FFF;
+            result |= wordValue << shift;
             shift += 15;
         } while (highBit);
 

@@ -2,8 +2,8 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Point2D;
-import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Solid extends EntityObject {
 
@@ -13,7 +13,7 @@ public class Solid extends EntityObject {
     public Point2D corner2;
     public Point2D corner3;
     public Point2D corner4;
-    public Point3D extrusion;
+    public Extrusion extrusion;
 
     public Solid(ObjectMap objectMap) {
         super(objectMap);
@@ -21,7 +21,7 @@ public class Solid extends EntityObject {
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.33 SOLID (31) page 129    
+        // 19.4.33 SOLID (31) page 129
 
         thickness = dataStream.getBT();
         elevation = dataStream.getBD();
@@ -38,6 +38,7 @@ public class Solid extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "SOLID";
     }

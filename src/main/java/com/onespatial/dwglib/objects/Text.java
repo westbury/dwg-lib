@@ -2,16 +2,16 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point2D;
-import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Text extends EntityObject {
 
     public double elevation;
     public Point2D insertionPoint;
     public Point2D alignmentPoint;
-    public Point3D extrusion;
+    public Extrusion extrusion;
     public double thickness;
     public double obliqueAngle;
     public double rotationAngle;
@@ -29,7 +29,7 @@ public class Text extends EntityObject {
 
     @Override
     public void readObjectTypeSpecificData(BitBuffer dataStream, BitBuffer stringStream, BitBuffer handleStream, FileVersion fileVersion) {
-        // 19.4.3 TEXT (1) page 106    
+        // 19.4.3 TEXT (1) page 106
 
         int dataFlags = dataStream.getUnsignedRC();
         if ((dataFlags & 0x01) == 0) {
@@ -63,9 +63,9 @@ public class Text extends EntityObject {
         }
 
         // The Handles
-        
+
         styleHandle = handleStream.getHandle();
-        
+
         handleStream.advanceToByteBoundary();
 
         dataStream.assertEndOfStream();
@@ -73,6 +73,7 @@ public class Text extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "TEXT";
     }

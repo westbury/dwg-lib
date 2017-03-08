@@ -2,9 +2,9 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.bitstreams.Point2D;
-import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Attrib extends EntityObject {
 
@@ -14,7 +14,7 @@ public class Attrib extends EntityObject {
 
     public Point2D alignPoint;
 
-    public Point3D extrusion;
+    public Extrusion extrusion;
 
     public double thickness;
 
@@ -72,11 +72,11 @@ public class Attrib extends EntityObject {
         }
         height = dataStream.getRD();
         if ((dataFlags & 0x10) == 0) {
-        widthFactor = dataStream.getRD();
+            widthFactor = dataStream.getRD();
         }
         value = stringStream.getTU();
         if ((dataFlags & 0x20) == 0) {
-        generation = dataStream.getBS();
+            generation = dataStream.getBS();
         }
         if ((dataFlags & 0x40) == 0) {
             horizontalAlignment = dataStream.getBS();
@@ -91,7 +91,7 @@ public class Attrib extends EntityObject {
         lockPosition = dataStream.getB();
 
         styleHandle = handleStream.getHandle(handleOfThisObject);
-        
+
         handleStream.advanceToByteBoundary();
 
         dataStream.assertEndOfStream();
@@ -99,13 +99,14 @@ public class Attrib extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
-	public String toString() {
-		return "ATTRIB";
-	}
+    @Override
+    public String toString() {
+        return "ATTRIB";
+    }
 
     public CadObject getStyle() {
         CadObject result = objectMap.parseObject(styleHandle);
-        return (CadObject) result;
+        return result;
     }
 
 }

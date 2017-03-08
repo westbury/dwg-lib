@@ -2,6 +2,7 @@ package com.onespatial.dwglib.objects;
 
 import com.onespatial.dwglib.FileVersion;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Point3D;
 
 public class Line extends EntityObject {
@@ -9,7 +10,7 @@ public class Line extends EntityObject {
     public Point3D start;
     public Point3D end;
     public double thickness;
-    public Point3D extrusion;
+    public Extrusion extrusion;
 
     public Line(ObjectMap objectMap) {
         super(objectMap);
@@ -37,20 +38,20 @@ public class Line extends EntityObject {
         }
         start = new Point3D(startX, startY, startZ);
         end = new Point3D(endX, endY, endZ);
-        
+
         thickness = dataStream.getBT();
         extrusion = dataStream.getBE();
 
         // Read all handles (until we figure out what they are)
 
-//        try {
-//            do {
-//                Handle referencedHandle = handleStream.getHandle(handleOfThisObject);
-//                genericHandles.add(referencedHandle);
-//            } while (true);
-//        } catch (RuntimeException e) {
-//
-//        }
+        //        try {
+        //            do {
+        //                Handle referencedHandle = handleStream.getHandle(handleOfThisObject);
+        //                genericHandles.add(referencedHandle);
+        //            } while (true);
+        //        } catch (RuntimeException e) {
+        //
+        //        }
 
 
         handleStream.advanceToByteBoundary();
@@ -60,6 +61,7 @@ public class Line extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
     public String toString() {
         return "LINE";
     }

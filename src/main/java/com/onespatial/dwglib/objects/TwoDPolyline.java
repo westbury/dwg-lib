@@ -4,9 +4,11 @@ import java.util.AbstractList;
 import java.util.List;
 
 import com.onespatial.dwglib.FileVersion;
+import com.onespatial.dwglib.Issues;
 import com.onespatial.dwglib.bitstreams.BitBuffer;
+import com.onespatial.dwglib.bitstreams.Extrusion;
 import com.onespatial.dwglib.bitstreams.Handle;
-import com.onespatial.dwglib.bitstreams.Point3D;
+import com.onespatial.dwglib.writer.BitWriter;
 
 public class TwoDPolyline extends EntityObject {
 
@@ -23,7 +25,7 @@ public class TwoDPolyline extends EntityObject {
     public double endWidth;
     public double thickness;
     public double elevation;
-    public Point3D extrusion;
+    public Extrusion extrusion;
     private Handle[] ownedObjectHandles;
     private Handle seqEndHandle;
 
@@ -70,6 +72,64 @@ public class TwoDPolyline extends EntityObject {
         handleStream.assertEndOfStream();
     }
 
+    @Override
+    protected void writeObjectTypeSpecificData(byte[] byteArray, BitWriter dataStream, BitWriter stringStream,
+            BitWriter handleStream, Issues issues) {
+
+        // 19.4.16 2D POLYLINE (15) page 115
+
+        int flags = 0;
+        if (isClosed) {
+            flags |= 0x01;
+        }
+        if (curveFitVerticesAdded) {
+            flags |= 0x02;
+        }
+        if (splineFitVerticesAdded) {
+            flags |= 0x04;
+        }
+        if (is3DPolyline) {
+            flags |= 0x08;
+        }
+        if (is3DPolygonMesh) {
+            flags |= 0x10;
+        }
+        if (isMeshClosedInNDirection) {
+            flags |= 0x20;
+        }
+        if (isPolyfaceMesh) {
+            flags |= 0x40;
+        }
+        if (continuousLinetypePattern) {
+            flags |= 0x80;
+        }
+        dataStream.putBS(flags);
+
+        dataStream.putBS(curveType);
+        dataStream.putBD(startWidth);
+        dataStream.putBD(endWidth);
+        dataStream.putBT(thickness);
+        dataStream.putBD(elevation);
+        dataStream.putBE(extrusion);
+
+        dataStream.putBL(ownedObjectHandles.length);
+
+        // The Handles
+
+        for (Handle ownedObjectHandle : ownedObjectHandles) {
+            handleStream.putHandle(ownedObjectHandle);
+        }
+
+        handleStream.putHandle(seqEndHandle);
+
+    }
+
+    @Override
+    public int getObjectType() {
+        return 15;
+    }
+
+    @Override
     public String toString() {
         return "2D POLYLINE";
     }

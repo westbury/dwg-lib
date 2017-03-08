@@ -29,12 +29,14 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.onespatial.dwglib.bitstreams.BitBuffer;
 import com.onespatial.dwglib.bitstreams.BitStreams;
+import com.onespatial.dwglib.bitstreams.BitWriters;
 import com.onespatial.dwglib.bitstreams.Handle;
 import com.onespatial.dwglib.objects.AcdbDictionaryWithDefault;
 import com.onespatial.dwglib.objects.AcdbPlaceHolder;
@@ -89,6 +91,7 @@ import com.onespatial.dwglib.objects.View;
 import com.onespatial.dwglib.objects.ViewControlObj;
 import com.onespatial.dwglib.objects.ViewPort;
 import com.onespatial.dwglib.objects.XRecord;
+import com.onespatial.dwglib.writer.BitWriter;
 
 /**
  * Reads a DWG format file.
@@ -97,7 +100,7 @@ import com.onespatial.dwglib.objects.XRecord;
  */
 public class Reader implements AutoCloseable {
 
-    private Issues issues = new Issues();
+    protected Issues issues = new Issues();
 
     // The following fields are extracted from the first 128 bytes of the file.
 
@@ -117,19 +120,24 @@ public class Reader implements AutoCloseable {
     private int summaryInfoAddress;
     private int vbaProjectAddress;
 
+    private ObjectMap objectMap;
+
     List<Section> sections = new ArrayList<>();
 
     List<ClassData> classes = new ArrayList<>();
 
     public Header header;
 
-    private byte[] objectBuffer;
+    protected byte[] objectBuffer;
 
     private List<ObjectMapSection> objectMapSections;
 
-    private Map<Long, CadObject> doneObjects = new HashMap<>();
+    private Map<Integer, CadObject> doneObjects = new HashMap<>();
 
     public Reader(File inputFile) throws IOException {
+        // Create placeholder class.
+        objectMap = new ObjectMap(this);
+
         try (FileInputStream inputStream = new FileInputStream(inputFile)) {
             FileChannel channel = inputStream.getChannel();
             ByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -243,7 +251,7 @@ public class Reader implements AutoCloseable {
         }
         assert offsetIntoObjectMap != null;
 
-        CadObject cadObject = parseObjectAtGivenOffset(offsetIntoObjectMap);
+        CadObject cadObject = getObjectAtGivenOffset(offsetIntoObjectMap);
 
         return cadObject;
     }
@@ -258,12 +266,12 @@ public class Reader implements AutoCloseable {
             return null;
         }
 
-        CadObject cadObject = parseObjectAtGivenOffset(offsetIntoObjectMap);
+        CadObject cadObject = getObjectAtGivenOffset(offsetIntoObjectMap);
 
         return cadObject;
     }
 
-    protected CadObject parseObjectAtGivenOffset(long offsetIntoObjectMap) {
+    private CadObject getObjectAtGivenOffset(long offsetIntoObjectMap) {
         if (doneObjects.containsKey(offsetIntoObjectMap)) {
             return doneObjects.get(offsetIntoObjectMap);
         }
@@ -271,7 +279,15 @@ public class Reader implements AutoCloseable {
         if (offsetIntoObjectMap > Integer.MAX_VALUE) {
             throw new RuntimeException("overflow");
         }
-        BitStreams bitStreams = new BitStreams(objectBuffer, (int) offsetIntoObjectMap, issues);
+
+        return parseObjectAtGivenOffset((int) offsetIntoObjectMap);
+    }
+
+    protected CadObject parseObjectAtGivenOffset(int offsetIntoObjectMap) {
+        if (offsetIntoObjectMap == 504660) {
+            System.out.println("polyline");
+        }
+        BitStreams bitStreams = new BitStreams(objectBuffer, offsetIntoObjectMap, issues);
         BitBuffer dataStream = bitStreams.getDataStream();
         BitBuffer stringStream = bitStreams.getStringStream();
         BitBuffer handleStream = bitStreams.getHandleStream();
@@ -279,9 +295,6 @@ public class Reader implements AutoCloseable {
         int objectType = dataStream.getOT();
 
         CadObject cadObject;
-
-        // Create placeholder class.
-        objectMap = new ObjectMap(this);
 
         if (objectType >= 500) {
             int classIndex = objectType - 500;
@@ -502,8 +515,6 @@ public class Reader implements AutoCloseable {
             0x53b39330, 0x24b4a3a6, 0xbad03605, 0xcdd70693, 0x54de5729, 0x23d967bf, 0xb3667a2e, 0xc4614ab8, 0x5d681b02,
             0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b, 0x2d02ef8d };
 
-    private ObjectMap objectMap;
-
     int crc(byte[] p, int n, int seed) {
         int invertedCrc = ~seed;
         for (int index = 0; index < n; index++) {
@@ -517,13 +528,13 @@ public class Reader implements AutoCloseable {
     /**
      * Section 4.3 System section page
      */
-    private void readSystemSectionPage(ByteBuffer buffer, long sectionPageMapAddress, int sectionMapId) {
+    private void readSystemSectionPage(ByteBuffer fileBuffer, long sectionPageMapAddress, int sectionMapId) {
         if (0x100 + sectionPageMapAddress > Integer.MAX_VALUE) {
             throw new RuntimeException("sectionPageMapAddress is too big for us.");
         }
-        buffer.position(0x100 + (int) sectionPageMapAddress);
+        fileBuffer.position(0x100 + (int) sectionPageMapAddress);
 
-        SectionPage sectionPage = readSystemSectionPage(buffer, 0x41630E3B);
+        SectionPage sectionPage = readSystemSectionPage(fileBuffer, 0x41630E3B);
 
         // 4.4 2004 Section page map
 
@@ -559,11 +570,11 @@ public class Reader implements AutoCloseable {
             }
         }
 
-        buffer.position(sectionMap.address);
+        fileBuffer.position(sectionMap.address);
 
         // 4.3 (page 25) System section page:
 
-        SectionPage sectionPage2 = readSystemSectionPage(buffer, 0x4163003B);
+        SectionPage sectionPage2 = readSystemSectionPage(fileBuffer, 0x4163003B);
 
         // The expanded data is described in 4.5 2004 Data section map.
 
@@ -642,23 +653,23 @@ public class Reader implements AutoCloseable {
                     }
                 }
 
-                buffer.position(classesData.address);
+                fileBuffer.position(classesData.address);
 
                 int secMask = 0x4164536b ^ classesData.address;
 
-                int typeA = buffer.getInt();
+                int typeA = fileBuffer.getInt();
                 int typeB = typeA ^ secMask;
                 int sectionPageType = typeA ^ classesData.address;
-                int sectionNumber = buffer.getInt() ^ secMask;
-                int dataSize2 = buffer.getInt() ^ secMask; // dataSize
-                int pageSize = buffer.getInt() ^ secMask; // classData.sectionSize
-                int startOffset2 = buffer.getInt() ^ secMask;
-                int pageHeaderChecksum = buffer.getInt() ^ secMask;
-                int dataChecksum = buffer.getInt() ^ secMask;
-                int unknown5 = buffer.getInt() ^ secMask;
+                int sectionNumber = fileBuffer.getInt() ^ secMask;
+                int dataSize2 = fileBuffer.getInt() ^ secMask; // dataSize
+                int pageSize = fileBuffer.getInt() ^ secMask; // classData.sectionSize
+                int startOffset2 = fileBuffer.getInt() ^ secMask;
+                int pageHeaderChecksum = fileBuffer.getInt() ^ secMask;
+                int dataChecksum = fileBuffer.getInt() ^ secMask;
+                int unknown5 = fileBuffer.getInt() ^ secMask;
 
                 byte[] compressedData = new byte[dataSize2];
-                buffer.get(compressedData);
+                fileBuffer.get(compressedData);
 
                 byte[] expandedData = new Expander(compressedData, maxDecompressedSize).result;
 
@@ -676,7 +687,7 @@ public class Reader implements AutoCloseable {
                 header = new Header(bitStreams, fileVersion);
 
             } else if (sectionName.equals("AcDb:Handles")) {
-                byte[] expandedData = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
+                byte[] expandedData = combinePages(fileBuffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 
                 // Page 236 The Object Map
 
@@ -719,12 +730,12 @@ public class Reader implements AutoCloseable {
                 }
 
             } else if (sectionName.equals("AcDb:AcDbObjects")) {
-                byte[] combinedBuffer = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
+                byte[] combinedBuffer = combinePages(fileBuffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 
                 objectBuffer = combinedBuffer;
 
             } else if (sectionName.equals("AcDb:Classes")) {
-                byte[] combinedBuffer = combinePages(buffer, sectionPageBuffer, pageCount, maxDecompressedSize);
+                byte[] combinedBuffer = combinePages(fileBuffer, sectionPageBuffer, pageCount, maxDecompressedSize);
 
                 // 5.8 AcDb:Classes Section
 
@@ -769,7 +780,7 @@ public class Reader implements AutoCloseable {
 
     }
 
-    private byte[] combinePages(ByteBuffer buffer, ByteBuffer sectionPageBuffer, int pageCount,
+    private byte[] combinePages(ByteBuffer fileBuffer, ByteBuffer sectionPageBuffer, int pageCount,
             int maxDecompressedSize) {
         List<byte[]> objectBuffers = new ArrayList<>();
         int totalSize = 0;
@@ -787,12 +798,24 @@ public class Reader implements AutoCloseable {
                 }
             }
 
-            buffer.position(classesData.address + 32);
+            fileBuffer.position(classesData.address + 32);
 
             byte[] compressedData = new byte[dataSize];
-            buffer.get(compressedData);
+            fileBuffer.get(compressedData);
 
             byte[] expandedData = new Expander(compressedData, maxDecompressedSize).result;
+
+            // Test....
+            byte[] reCompressedData = new Compressor(expandedData).result;
+            byte[] reExpandedData = new Expander(reCompressedData, maxDecompressedSize).result;
+            for (int i = 0; i < Math.min(expandedData.length, reExpandedData.length); i++) {
+                if (expandedData[i] != reExpandedData[i]) {
+                    System.out.println("mismatch at offset " + i);
+                }
+            }
+            if (!Arrays.equals(expandedData, reExpandedData)) {
+                throw new RuntimeException("internal inconsistency in expansion and compression.");
+            }
 
             objectBuffers.add(expandedData);
 
@@ -809,21 +832,21 @@ public class Reader implements AutoCloseable {
         return combinedBuffer;
     }
 
-    private SectionPage readSystemSectionPage(ByteBuffer buffer, int expectedPageType) {
-        int pageType = buffer.getInt();
-        int decompressedSize = buffer.getInt();
-        int compressedSize = buffer.getInt();
-        int compressionType = buffer.getInt();
-        int sectionPageChecksum = buffer.getInt();
+    private SectionPage readSystemSectionPage(ByteBuffer fileBuffer, int expectedPageType) {
+        int pageType = fileBuffer.getInt();
+        int decompressedSize = fileBuffer.getInt();
+        int compressedSize = fileBuffer.getInt();
+        int compressionType = fileBuffer.getInt();
+        int sectionPageChecksum = fileBuffer.getInt();
 
         byte[] compressedData = new byte[compressedSize];
-        buffer.get(compressedData);
+        fileBuffer.get(compressedData);
 
-        int pageType2 = buffer.getInt();
-        int decompressedSize2 = buffer.getInt();
-        int compressedSize2 = buffer.getInt();
-        int compressionType2 = buffer.getInt();
-        int sectionPageChecksum2 = buffer.getInt();
+        int pageType2 = fileBuffer.getInt();
+        int decompressedSize2 = fileBuffer.getInt();
+        int compressedSize2 = fileBuffer.getInt();
+        int compressionType2 = fileBuffer.getInt();
+        int sectionPageChecksum2 = fileBuffer.getInt();
 
         if (pageType != expectedPageType) {
             throw new RuntimeException();
@@ -1134,4 +1157,49 @@ public class Reader implements AutoCloseable {
         return issues;
     }
 
+    /**
+     * Saves changes in-place, updating the same file.
+     */
+    public void save() {
+        for (CadObject cadObject : objectMap.dirtyCadObjects) {
+            Handle h = cadObject.handleOfThisObject;
+            Long offsetIntoObjectMap = getOffsetIntoObjectMap(h);
+
+            BitWriter dataStream = new BitWriter(issues);
+            BitWriter stringStream = new BitWriter(issues);
+            BitWriter handleStream = new BitWriter(issues);
+            cadObject.write(objectBuffer, dataStream, stringStream, handleStream, issues);
+
+            BitWriters writers = new BitWriters(dataStream, stringStream, handleStream, issues);
+
+            byte[] byteArray = writers.getByteArray();
+
+            // Get original data length for this object
+            ByteBuffer objectsBuffer = ByteBuffer.wrap(objectBuffer);
+            objectsBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            objectsBuffer.position((int) (long) offsetIntoObjectMap);
+
+            int originalSizeOfObject = BitStreams.getMS(objectsBuffer);
+            BitStreams.getUnsignedMC(objectsBuffer);
+            int originalTotalSize = objectsBuffer.position() + originalSizeOfObject;
+
+            int newTotalSize = byteArray.length;
+
+            if (newTotalSize <= originalTotalSize) {
+                int destination = (int) (long) offsetIntoObjectMap;
+                for (byte b : byteArray) {
+                    objectBuffer[destination++] = b;
+                }
+                for (int i = 0; i < originalTotalSize - newTotalSize; i++) {
+                    objectBuffer[destination++] = 0;
+                }
+            } else {
+                issues.addWarning(
+                        "Updates to " + cadObject.toString() + " not made because the updates made the record longer.");
+            }
+        }
+
+        // Now need to write back objectBuffer to file
+
+    }
 }
