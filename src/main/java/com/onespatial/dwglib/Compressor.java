@@ -22,8 +22,11 @@
 
 package com.onespatial.dwglib;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Compresses a byte array using the LZ77 compression algorithm.
@@ -129,11 +132,9 @@ public class Compressor {
 
 
 
-    byte[] expandedData;
+    private final byte[] expandedData;
 
-    byte[] result;
-
-    private int inputPosition = 0;
+    final byte[] result;
 
     private final List<Byte> outputBytes = new ArrayList<>();
 
@@ -146,6 +147,8 @@ public class Compressor {
         // We should be compressing, so doubling the size is safe???
         // int compressedSize = expandedData.length * 2;
 
+        ByteBuffer expandedBuffer = ByteBuffer.wrap(expandedData);
+
         List<Byte> literal = new ArrayList<>();
 
         // 4 is the minimum literal length
@@ -154,26 +157,44 @@ public class Compressor {
             literal.add(expandedData[i]);
         }
 
+        Map<Integer, List<Integer>> sequenceMap = new HashMap<>();
+
+        for (int start = 0; start < 4; start++) {
+            expandedBuffer.position(start);
+            int fourBytes = expandedBuffer.getInt();
+            List<Integer> valueList = sequenceMap.get(fourBytes);
+            if (valueList == null) {
+                valueList = new ArrayList<>();
+                sequenceMap.put(fourBytes, valueList);
+            }
+            valueList.add(start);
+        }
+
         // These 3 go together. Probably needs cleaning up.
         int compressedBytes = -1;
         int compOffset = -1;
         CompressionStyle style = null;
 
         do {
-            if (position > 388) {
-                System.out.println("");
-            }
-            // Brute force method.  Simply look for the longest match.
             int bestMatchLength = 0;
             int bestStart = -1;
 
-            for (int start = 0; start < position; start++) {
-                int matchLength = countMatches(start, position);
-                if (matchLength >= bestMatchLength) {
-                    bestMatchLength = matchLength;
-                    bestStart = start;
+            expandedBuffer.position(position);
+            int x = expandedBuffer.getInt();
+            List<Integer> offsets = sequenceMap.get(x);
+            if (offsets != null) {
+                for (int start : offsets) {
+                    int matchLength = countMatches(start, position);
+                    if (matchLength >= bestMatchLength) {
+                        bestMatchLength = matchLength;
+                        bestStart = start;
+                    }
                 }
+            } else {
+                offsets = new ArrayList<>();
+                sequenceMap.put(x, offsets);
             }
+            offsets.add(position);
 
             /*
              * We're only interested in matching lengths of at least 4. If the
@@ -218,7 +239,13 @@ public class Compressor {
 
                 position += compressedBytes;
             }
-        } while (position < expandedData.length);
+        } while (position <= expandedData.length - 4);
+
+        // If there are remaining bytes (less than 4, so too few to
+        // look up duplicates) then those are appended to the literal data.
+        while (position < expandedData.length) {
+            literal.add(expandedData[position++]);
+        }
 
         if (style == null) {
             pushLitLength(literal.size());
@@ -314,9 +341,6 @@ public class Compressor {
     }
 
     private void pushUnsignedByte(int value) {
-        if (value > 255) {
-            System.out.println("Here");
-        }
         assert value <= 0xFF;
         if (value <= 0x7F) {
             outputBytes.add((byte) value);
