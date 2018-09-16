@@ -89,6 +89,7 @@ import com.onespatial.dwglib.objects.View;
 import com.onespatial.dwglib.objects.ViewControlObj;
 import com.onespatial.dwglib.objects.ViewPort;
 import com.onespatial.dwglib.objects.XRecord;
+import com.onespatial.dwglib.writer.BitWriter;
 
 /**
  * Reads a DWG format file.
@@ -1134,4 +1135,22 @@ public class Reader implements AutoCloseable {
         return issues;
     }
 
+    /**
+     * Saves changes in-place, updating the same file.
+     */
+    public void save() {
+        for (CadObject cadObject : objectMap.dirtyCadObjects) {
+
+
+            BitWriter dataStream = new BitWriter(issues);
+            BitWriter stringStream = new BitWriter(issues);
+            BitWriter handleStream = new BitWriter(issues);
+            cadObject.write(objectBuffer, dataStream, stringStream, handleStream, issues);
+
+
+            // TODO Auto-generated method stub
+
+        }
+
+    }
 }

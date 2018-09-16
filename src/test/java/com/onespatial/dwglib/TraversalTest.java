@@ -1,15 +1,10 @@
 package com.onespatial.dwglib;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.onespatial.dwglib.bitstreams.Handle;
@@ -43,55 +38,53 @@ import com.onespatial.dwglib.objects.SortEntsTable;
 import com.onespatial.dwglib.objects.Text;
 import com.onespatial.dwglib.objects.TwoDPolyline;
 
-public class TraversalTest {
+public abstract class TraversalTest
+{
+
+    Set<CadObject> printed = new HashSet<>();
+
+    Layer previousLayer = null;
 
     /**
-     * a sample file, available from Autodesk, in 2010 format
+     * the file under test, to be set in the @BeforeClass in the concrete test
+     * class.
      */
-    static File testFile = new File("visualization_-_aerial.dwg");
-
-
-    /**
-     * @throws java.lang.Exception
-     */
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        if (!testFile.exists()) {
-
-            URL urlToTestFile = new URL("http://download.autodesk.com/us/samplefiles/acad/visualization_-_aerial.dwg");
-            try (
-                    ReadableByteChannel inputChannel = Channels.newChannel(urlToTestFile.openStream());
-                    FileOutputStream outputStream = new FileOutputStream(testFile);
-                    ) {
-                outputStream.getChannel().transferFrom(inputChannel, 0, Long.MAX_VALUE);
-            }
-        }
-    }
+    abstract protected File getTestFile();
 
     @Test
     public void traversalTest() throws Exception {
+        File testFile = getTestFile();
+
         try (Reader reader = new Reader(testFile)) {
             BlockControlObj blockControl = reader.getBlockControlObject();
             BlockHeader ms = (BlockHeader)blockControl.getModelSpace();
             if (ms != null) {
                 for (CadObject entity : ms.getOwnedObjects()) {
-                    traceEntity("", (EntityObject)entity, null);
+                    if (entity instanceof EntityObject)
+                    {
+                        traceEntity("", (EntityObject) entity, null);
+                    }
+                    else
+                    {
+                        System.out.println(entity.getClass().getSimpleName());
+                    }
                 }
             }
         }
     }
 
-    static Layer previousLayer = null;
-
     private void traceEntity(String indent, EntityObject entity, Layer parentLayer)
     {
         Layer layer = entity.getLayer();
         if (layer.entryName.equals("0")) {
-            // Block layer, so inherit from parent
-            if (parentLayer == null) {
-                throw new RuntimeException("Can't have '0' layer entity at top-level.");
+            /*
+             * Block layer, so inherit from parent if there is a parent. Some
+             * DWG files have blocks in layer "0" with no parent. In those cases
+             * we leave the block in layer "0".
+             */
+            if (parentLayer != null) {
+                layer = parentLayer;
             }
-            layer = parentLayer;
         } else {
             /*
              * Generally blocks have entities defined in layer '0'.
@@ -108,7 +101,7 @@ public class TraversalTest {
 
         if (entity instanceof Point) {
             Point point = (Point)entity;
-            System.out.println(indent + "    Point: " + point.point);
+            System.out.println(indent + "    Point: " + point.getPoint());
         } else if (entity instanceof Line) {
             Line line = (Line)entity;
             System.out.println(indent + "    Line: " + line.start + " to " + line.end);
@@ -137,8 +130,16 @@ public class TraversalTest {
             BlockHeader block = insert.getBlockHeader();
             System.out.println(indent + "    Insert block " + block.entryName + ": scale is (" + insert.xScaleFactor + ", " + insert.yScaleFactor + "), rotation is " + insert.rotation);
 
-            for (EntityObject child : block.getOwnedObjects()) {
-                traceEntity("    " + indent, child, layer);
+            for (CadObject child : block.getOwnedObjects())
+            {
+                if (child instanceof EntityObject)
+                {
+                    traceEntity("    " + indent, (EntityObject) child, layer);
+                }
+                else
+                {
+                    System.out.println(indent + "    " + child.getClass().getSimpleName());
+                }
             }
         } else {
             System.out.println(indent + "    " + entity.getClass().getSimpleName());
@@ -147,49 +148,51 @@ public class TraversalTest {
 
     @Test
     public void traverseEverythingTest() throws Exception {
+        File testFile = getTestFile();
+
         try (Reader reader = new Reader(testFile)) {
             Map<String, CadObject> rootObjects = new HashMap<>();
-            rootObjects.put("CLAYER", reader.getCLayer()); 
-            rootObjects.put("TEXTSTYLE", reader.getTextStyle()); 
-            rootObjects.put("CELTYPE", reader.getCelType()); 
-            rootObjects.put("CMATERIAL", reader.getCMaterial()); 
-            rootObjects.put("DIMSTYLE", reader.getDimStyle()); 
-            rootObjects.put("CMLSTYLE", reader.getCmlStyle()); 
-            rootObjects.put("DIMTXSTY", reader.getDimTxSty()); 
-            rootObjects.put("DIMLDRBLK", reader.getDimLdrBlk()); 
-            rootObjects.put("DIMBLK", reader.getDimBlk()); 
-            rootObjects.put("DIMBLK1", reader.getDimBlk1()); 
-            rootObjects.put("DIMBLK2", reader.getDimBlk2()); 
-            rootObjects.put("DIMLTYPE", reader.getDimLType()); 
-            rootObjects.put("DIMLTEX1", reader.getDimLTex1()); 
-            rootObjects.put("DIMLTEX2", reader.getDimLTex2()); 
-            rootObjects.put("BLOCK_CONTROL_OBJECT", reader.getBlockControlObject()); 
-            rootObjects.put("LAYER_CONTROL_OBJECT", reader.getLayerControlObject()); 
-            rootObjects.put("STYLE_CONTROL_OBJECT", reader.getStyleControlObject()); 
-            rootObjects.put("LINETYPE_CONTROL_OBJECT", reader.getLinetypeControlObject()); 
-            rootObjects.put("VIEW_CONTROL_OBJECT", reader.getViewControlObject()); 
-            rootObjects.put("UCS_CONTROL_OBJECT", reader.getUcsControlObject()); 
-            rootObjects.put("VPORT_CONTROL_OBJECT", reader.getVPortControlObject()); 
-            rootObjects.put("APPID_CONTROL_OBJECT", reader.getAppidControlObject()); 
-            rootObjects.put("DIMSTYLE_CONTROL_OBJECT", reader.getDimStyleControlObject()); 
-            rootObjects.put("DICTIONARY_ACAD_GROUP", reader.getDictionaryAcadGroup()); 
-            rootObjects.put("DICTIONARY_ACAD_MLINESTYLE", reader.getDictionaryAcadMLineStyle()); 
-            rootObjects.put("DICTIONARY_NAMED_OBJECTS", reader.getDictionaryNamedObjects()); 
-            rootObjects.put("DICTIONARY_LAYOUTS", reader.getDictionaryLayouts()); 
-            rootObjects.put("DICTIONARY_PLOTSETTINGS", reader.getDictionaryPlotsettings()); 
-            rootObjects.put("DICTIONARY_PLOTSTYLES", reader.getDictionaryPlotstyles()); 
-            rootObjects.put("DICTIONARY_MATERIALS", reader.getDictionaryMaterials()); 
-            rootObjects.put("DICTIONARY_COLORS", reader.getDictionaryColors()); 
-            rootObjects.put("DICTIONARY_VISUALSTYLE", reader.getDictionaryVisualstyle()); 
-            rootObjects.put("UNKNOWN", reader.getUnknown()); 
-            rootObjects.put("CPSNID", reader.getCpsnid()); 
-            rootObjects.put("BLOCK_RECORD_PAPER_SPACE", reader.getBlockRecordPaperSpace()); 
-            rootObjects.put("BLOCK_RECORD_MODEL_SPACE", reader.getBlockRecordModelSpace()); 
-            rootObjects.put("LTYPE_BYLAYER", reader.getLTypeByLayer()); 
-            rootObjects.put("LTYPE_BYBLOCK", reader.getLTypeByBlock()); 
-            rootObjects.put("LTYPE_CONTINUOUS", reader.getLTypeContinuous()); 
-            rootObjects.put("INTERFEREOBJVS", reader.getInterfereObjvs()); 
-            rootObjects.put("INTERFEREVPVS", reader.getInterfereVpvs()); 
+            rootObjects.put("CLAYER", reader.getCLayer());
+            rootObjects.put("TEXTSTYLE", reader.getTextStyle());
+            rootObjects.put("CELTYPE", reader.getCelType());
+            rootObjects.put("CMATERIAL", reader.getCMaterial());
+            rootObjects.put("DIMSTYLE", reader.getDimStyle());
+            rootObjects.put("CMLSTYLE", reader.getCmlStyle());
+            rootObjects.put("DIMTXSTY", reader.getDimTxSty());
+            rootObjects.put("DIMLDRBLK", reader.getDimLdrBlk());
+            rootObjects.put("DIMBLK", reader.getDimBlk());
+            rootObjects.put("DIMBLK1", reader.getDimBlk1());
+            rootObjects.put("DIMBLK2", reader.getDimBlk2());
+            rootObjects.put("DIMLTYPE", reader.getDimLType());
+            rootObjects.put("DIMLTEX1", reader.getDimLTex1());
+            rootObjects.put("DIMLTEX2", reader.getDimLTex2());
+            rootObjects.put("BLOCK_CONTROL_OBJECT", reader.getBlockControlObject());
+            rootObjects.put("LAYER_CONTROL_OBJECT", reader.getLayerControlObject());
+            rootObjects.put("STYLE_CONTROL_OBJECT", reader.getStyleControlObject());
+            rootObjects.put("LINETYPE_CONTROL_OBJECT", reader.getLinetypeControlObject());
+            rootObjects.put("VIEW_CONTROL_OBJECT", reader.getViewControlObject());
+            rootObjects.put("UCS_CONTROL_OBJECT", reader.getUcsControlObject());
+            rootObjects.put("VPORT_CONTROL_OBJECT", reader.getVPortControlObject());
+            rootObjects.put("APPID_CONTROL_OBJECT", reader.getAppidControlObject());
+            rootObjects.put("DIMSTYLE_CONTROL_OBJECT", reader.getDimStyleControlObject());
+            rootObjects.put("DICTIONARY_ACAD_GROUP", reader.getDictionaryAcadGroup());
+            rootObjects.put("DICTIONARY_ACAD_MLINESTYLE", reader.getDictionaryAcadMLineStyle());
+            rootObjects.put("DICTIONARY_NAMED_OBJECTS", reader.getDictionaryNamedObjects());
+            rootObjects.put("DICTIONARY_LAYOUTS", reader.getDictionaryLayouts());
+            rootObjects.put("DICTIONARY_PLOTSETTINGS", reader.getDictionaryPlotsettings());
+            rootObjects.put("DICTIONARY_PLOTSTYLES", reader.getDictionaryPlotstyles());
+            rootObjects.put("DICTIONARY_MATERIALS", reader.getDictionaryMaterials());
+            rootObjects.put("DICTIONARY_COLORS", reader.getDictionaryColors());
+            rootObjects.put("DICTIONARY_VISUALSTYLE", reader.getDictionaryVisualstyle());
+            rootObjects.put("UNKNOWN", reader.getUnknown());
+            rootObjects.put("CPSNID", reader.getCpsnid());
+            rootObjects.put("BLOCK_RECORD_PAPER_SPACE", reader.getBlockRecordPaperSpace());
+            rootObjects.put("BLOCK_RECORD_MODEL_SPACE", reader.getBlockRecordModelSpace());
+            rootObjects.put("LTYPE_BYLAYER", reader.getLTypeByLayer());
+            rootObjects.put("LTYPE_BYBLOCK", reader.getLTypeByBlock());
+            rootObjects.put("LTYPE_CONTINUOUS", reader.getLTypeContinuous());
+            rootObjects.put("INTERFEREOBJVS", reader.getInterfereObjvs());
+            rootObjects.put("INTERFEREVPVS", reader.getInterfereVpvs());
             rootObjects.put("DRAGVS", reader.getDragvs());
 
             for (String rootObjectName : rootObjects.keySet()) {
@@ -197,9 +200,7 @@ public class TraversalTest {
                 parseAndPrintPossiblyNull(rootObjectName, cadObject, "");
             }
         }
-    }        
-
-    Set<CadObject> printed = new HashSet<>();
+    }
 
     private void printObject(CadObject cadObject, String indent)
     {
@@ -261,11 +262,11 @@ public class TraversalTest {
         {
             Dictionary dictionary = (Dictionary)cadObject;
             for (String key : dictionary.getKeys()) {
-                CadObject referencedObject = dictionary.lookupObject(key); 
+                CadObject referencedObject = dictionary.lookupObject(key);
                 parseAndPrintPossiblyNull("[" + key + "]", referencedObject, indent);
             }
             if (cadObject instanceof AcdbDictionaryWithDefault) {
-                CadObject defaultEntry = ((AcdbDictionaryWithDefault)dictionary).getDefaultEntry(); 
+                CadObject defaultEntry = ((AcdbDictionaryWithDefault)dictionary).getDefaultEntry();
                 parseAndPrint("defaultEntry", defaultEntry, indent);
             }
         }
@@ -305,7 +306,7 @@ public class TraversalTest {
                 parseAndPrint("Owned Object", ownedObject, indent);
             }
             parseAndPrint("End Block", blockHeader.getEndBlock(), indent);
-            for (CadObject insert : blockHeader.getInserts()) {
+            for (Insert insert : blockHeader.getInserts()) {
                 parseAndPrint("Insert", insert, indent);
             }
             parseAndPrint("Layout", blockHeader.getLayout(), indent);
@@ -474,7 +475,7 @@ public class TraversalTest {
             } else if (component instanceof Long) {
                 trace.append(component);
 
-            } else { 
+            } else {
                 throw new RuntimeException("Unexpected case");
             }
             separator = ",";

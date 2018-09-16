@@ -38,7 +38,7 @@ public class BitBuffer {
     private byte[] byteArray;
 
     private Issues issues;
-    
+
     private int currentOffset;
 
     private int bitOffset;
@@ -50,13 +50,13 @@ public class BitBuffer {
     private BitBuffer(byte[] byteArray, Issues issues) {
         this.byteArray = byteArray;
         this.issues = issues;
-        
+
         currentOffset = 0;
         currentByte = byteArray[0];
         bitOffset = 0;
 
         // TODO: must set actual last bit here
-        this.endOffset = byteArray.length * 8;
+        endOffset = byteArray.length * 8;
     }
 
     public static BitBuffer wrap(byte[] byteArray, Issues issues) {
@@ -64,9 +64,9 @@ public class BitBuffer {
     }
 
     public void position(int offset) {
-        this.currentOffset = offset / 8;
+        currentOffset = offset / 8;
         currentByte = byteArray[currentOffset];
-        this.bitOffset = (offset % 8);
+        bitOffset = offset % 8;
     }
 
     public int position() {
@@ -89,7 +89,7 @@ public class BitBuffer {
         }
 
         int mask = 0x80 >> bitOffset;
-        boolean result = ((currentByte & mask) != 0);
+        boolean result = (currentByte & mask) != 0;
         if (bitOffset == 7) {
             currentByte = byteArray[++currentOffset];
             bitOffset = 0;
@@ -202,7 +202,7 @@ public class BitBuffer {
         long result = 0;
         int shift = 0;
         while (length-- != 0) {
-            result |= (getBitsUnsigned(8) << shift);
+            result |= getBitsUnsigned(8) << shift;
             shift += 8;
         }
 
@@ -270,14 +270,14 @@ public class BitBuffer {
         long byte6 = getBitsUnsigned(8);
         long byte7 = getBitsUnsigned(8);
 
-        return Double.longBitsToDouble((byte7 << 56)
-                | (byte6 << 48)
-                | (byte5 << 40)
-                | (byte4 << 32)
-                | (byte3 << 24)
-                | (byte2 << 16)
-                | (byte1 << 8)
-                | (byte0));
+        return Double.longBitsToDouble(byte7 << 56
+                | byte6 << 48
+                | byte5 << 40
+                | byte4 << 32
+                | byte3 << 24
+                | byte2 << 16
+                | byte1 << 8
+                | byte0);
     }
 
     /**
@@ -363,7 +363,7 @@ public class BitBuffer {
         int result = 0;
         for (int i = 0; i < numberOfBits; i++) {
             result <<= 1;
-            if (this.getB()) {
+            if (getB()) {
                 result += 1;
             }
         }
@@ -380,8 +380,8 @@ public class BitBuffer {
 
         byte[] x = new byte[length*2];
         for (int i = 0; i < length; i++) {
-            x[2*i+1] = (byte)this.getBitsUnsigned(8);
-            x[2*i] = (byte)this.getBitsUnsigned(8);
+            x[2*i+1] = (byte)getBitsUnsigned(8);
+            x[2*i] = (byte)getBitsUnsigned(8);
         }
         try {
             return new String(x, "UTF-16");
@@ -484,7 +484,7 @@ public class BitBuffer {
 
     /**
      * Paragraph 2.12 Object Type
-     * 
+     *
      * @return
      */
     public int getOT() {
@@ -560,11 +560,11 @@ public class BitBuffer {
             long byte3 = getBitsUnsigned(8);
             long byte4 = getBitsUnsigned(8);
 
-            return Double.longBitsToDouble((byte4 << 24)
-                    | (byte3 << 16)
-                    | (byte2 << 8)
-                    | (byte1 << 0)
-                    | (b & 0xFFFFFFFF00000000L));
+            return Double.longBitsToDouble(byte4 << 24
+                    | byte3 << 16
+                    | byte2 << 8
+                    | byte1 << 0
+                    | b & 0xFFFFFFFF00000000L);
         }
         case 2:
         {
@@ -577,13 +577,13 @@ public class BitBuffer {
             long byte5 = getBitsUnsigned(8);
             long byte6 = getBitsUnsigned(8);
 
-            return Double.longBitsToDouble((byte2 << 40)
-                    | (byte1 << 32)
-                    | (byte6 << 24)
-                    | (byte5 << 16)
-                    | (byte4 << 8)
-                    | (byte3 << 0)
-                    | (b & 0xFFFF000000000000L));
+            return Double.longBitsToDouble(byte2 << 40
+                    | byte1 << 32
+                    | byte6 << 24
+                    | byte5 << 16
+                    | byte4 << 8
+                    | byte3 << 0
+                    | b & 0xFFFF000000000000L);
         }
         case 3:
             return getRD();
@@ -593,9 +593,9 @@ public class BitBuffer {
     }
 
     public int[] getBytes(int length) {
-        int [] result = new int[length]; 
+        int [] result = new int[length];
         for (int i = 0; i < length; i++) {
-            result[i] = this.getBitsUnsigned(8);
+            result[i] = getBitsUnsigned(8);
         }
         return result;
     }
@@ -605,7 +605,12 @@ public class BitBuffer {
         if (extrusionBit) {
             return new Point3D(0.0, 0.0, 1.0);
         } else {
-            return get3BD();
+            Point3D result = get3BD();
+            if (result.x == 0.0 && result.y == 0.0 && result.z == 1.0) {
+//                throw new RuntimeException(
+//                        "We are not returning all the data and so this cannot be written back to get the identical data.");
+            }
+            return result;
         }
     }
 
@@ -614,7 +619,12 @@ public class BitBuffer {
         if (thicknessBit) {
             return 0.0;
         } else {
-            return getBD();
+            double result = getBD();
+            if (result == 0.0) {
+                throw new RuntimeException(
+                        "We are not returning all the data and so this cannot be written back to get the identical data.");
+            }
+            return result;
         }
     }
 

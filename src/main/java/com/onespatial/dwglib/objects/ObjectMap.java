@@ -1,5 +1,8 @@
 package com.onespatial.dwglib.objects;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import com.onespatial.dwglib.Issues;
 import com.onespatial.dwglib.Reader;
 import com.onespatial.dwglib.bitstreams.Handle;
@@ -8,6 +11,8 @@ import com.onespatial.dwglib.bitstreams.Handle;
 public class ObjectMap
 {
     private Reader reader;
+
+    public Collection<CadObject> dirtyCadObjects = new ArrayList<>();
 
     public ObjectMap(Reader reader) {
         this.reader = reader;
@@ -46,6 +51,11 @@ public class ObjectMap
         {
             return reader.parseObjectPossiblyOrphaned(handle);
         }
+    }
+
+    public void addToDirtyList(CadObject cadObject) {
+        dirtyCadObjects.add(cadObject);
+
     }
 
 }

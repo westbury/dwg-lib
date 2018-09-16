@@ -3,7 +3,6 @@ import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -13,7 +12,6 @@ import java.nio.channels.ReadableByteChannel;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.onespatial.dwglib.Reader;
 import com.onespatial.dwglib.bitstreams.BitStreams;
 
 public class ReaderTest {
@@ -42,7 +40,7 @@ public class ReaderTest {
 	}
 
 	@Test
-	public void version() throws IOException {
+	public void version() throws Exception {
 		Reader reader = new Reader(testFile);
 		assertEquals("2010", reader.getVersion());
 		
@@ -58,6 +56,7 @@ public class ReaderTest {
 		assertEquals(1, reader.classes.get(21).numberOfObjects);
 		assertEquals("SCENEOE", reader.classes.get(21).appname);
 		
+		reader.close();
 	}
 
 	@Test

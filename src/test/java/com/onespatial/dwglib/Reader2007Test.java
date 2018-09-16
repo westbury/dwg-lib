@@ -1,17 +1,12 @@
 package com.onespatial.dwglib;
-import static org.junit.Assert.assertEquals;
-
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import com.onespatial.dwglib.Reader;
 
 public class Reader2007Test {
 
@@ -39,7 +34,8 @@ public class Reader2007Test {
 	}
 
 	@Test(expected=UnsupportedFileVersionException.class)
-	public void version() throws IOException {
-	     new Reader(testFile);
+	public void version() throws Exception {
+	     Reader reader = new Reader(testFile);
+	     reader.close();
 	}
 }
